@@ -1,0 +1,7 @@
+langchain
+langchain-openai 
+langchain_community
+langchain-ollama
+ollama
+python-dotenv
+pillow
