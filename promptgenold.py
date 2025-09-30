@@ -13,7 +13,7 @@ models = ['gemma3:latest', 'qwen3:0.6b']
 repeat_number = 1
 
 # Specific prompts for the tasks completed. Be very consise, or the LLM may either give the wrong answer entirely, or not format it correctly.
-analyse_prompt = """
+analyseold_prompt = """
 You are a helpful tool designed to examine a student's homework assignment. You will be given an image to analyse. You will list the answer given by the student, as well as the question number.
 If there isn't a question number, then number the questions yourself. You will find out whether the assignment is a free response or multiple choice, and format
 your response correspondingly. If the assignment is free response, then give the number the student has circled, or otherwise emphasized (1.2555, 3/4, etc.).
@@ -40,6 +40,11 @@ and in that order. DO NOT INCLUDE THE PARENTHESE, and format the list in a human
 You will be given both answers, separated by semicolons, after this sentence.
 Here are your answers: 
 """
+analyse_prompt = """
+You are a helpful tool designed to examine and grade a student's homework assignment. You will be given two images to analyse, the student's homework and the teacher's key,
+in that order. You will respond with a very simple answer, just the question number and whether they got it right or wrong (True/False), formatted as follows; 
+question number. True/False. You will only give this output, nothing more or less. You will grade the homework as a teacher would, as accurate as possible.
+"""
 
 # Initialize models
 
@@ -47,9 +52,9 @@ vision_llm = ChatOllama(model=models[0])
 
 text_llm = ChatOllama(model=models[1])
 
-def analyse(image_path):
+def analyseold(image_path):
     # Encode image
-    with open("/home/ewise/Documents/answer key.png", "rb") as f:
+    with open(image_path, "rb") as f:
         image_data = base64.b64encode(f.read()).decode("utf-8")
     while True:
         responses = []
@@ -64,7 +69,7 @@ def analyse(image_path):
             )
             print(response["message"]["content"])
             responses.append(response["message"]["content"])
-        if check(responses):
+        if check(responses) == "True":
             result = responses[0]
             break
     return result
@@ -96,4 +101,29 @@ def compare(homework, answer_key):
         if check(responses):
                 result = responses[0]
                 break
+    return result
+
+
+def analyse(homework_path, key_path):
+    with open(homework_path, "rb") as f:
+        homework_data = base64.b64encode(f.read()).decode("utf-8")
+    with open(key_path, "rb") as f:
+        key_data = base64.b64encode(f.read()).decode("utf-8")
+    while True:
+        responses = []
+        for i in range(0, repeat_number):
+            response = ollama.chat(
+                model="llava:latest",
+                messages=[{
+                    "role": "user",
+                    "content": analyse_prompt,
+                    "images": [homework_data],
+                    "images": [key_data]
+                }]
+            )
+            print(response["message"]["content"])
+            responses.append(response["message"]["content"])
+        if check(responses) == "True":
+            result = responses[0]
+            break
     return result
