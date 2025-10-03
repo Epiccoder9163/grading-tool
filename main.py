@@ -6,15 +6,33 @@ from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
 # models = [vision model, small text model]
-models = ['gemma3:latest', 'qwen3:0.6b']
+models = ['llava:latest', 'qwen3:0.6b']
 
 # Prompt for the large language model
 prompt = """
-You are a precise and helpful assistant designed to grade math homework. You will be given two images: the student's completed homework and the teacher's answer key, in that order.
-Your task is to compare the student's answers to the correct ones and return a Python list of boolean values. Each element in the list should represent whether the student's answer to that question is correct (`True`) or incorrect (`False`).
-Only return the Python list. Do not include any explanation, formatting, or extra commentary. Be as accurate as possible, and assume the teacher would grade strictly based on correctness.
-Example output format:
+You will receive two images:  
+1. Student’s math homework (each page lists questions with the student’s 
+answers).  
+2. Teacher’s answer key (same questions with the correct answersh).
+
+**Task**  
+1. Use OCR to extract all text from both images.  
+2. For each question, compare the student’s answer with the correct 
+answer.  
+   - Treat answers as equal if the text or numeric value matches exactly, 
+ignoring leading/trailing whitespace and case.  
+3. Output **only** a Python list of booleans (`True` for a correct answer, 
+`False` otherwise), in the same order as the questions.  
+4. Do not provide any explanation, formatting, or extra text.  
+
+**Example**  
+```
 [True, False, True, True, False]
+```
+
+Ensure the list length equals the number of questions.
+
+
 """
 
 # Check if the models listed above are available
@@ -48,14 +66,18 @@ def analyse(paths):
     out = response.content.strip()
     out = out.split("\n")
     return out
-    
 
+os.system('clear')
 
 # Gather file paths
+os.system('clear')
 answer_key = libinput.get_key()
+os.system('clear')
 homework = libinput.get_homework()
 base64_data = [homework, answer_key]
 os.system('clear')
+print("Generating a response...")
+print("This may take a while")
 result = analyse(base64_data)
 for line in result:
     print(line)
