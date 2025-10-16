@@ -1,4 +1,3 @@
-import promptgenold
 import os
 import base64
 from io import BytesIO
