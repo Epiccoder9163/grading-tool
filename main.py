@@ -8,7 +8,7 @@ from langchain_community.chat_models import ChatOllama
 # Make sure it is an Ollama-compatible model
 model = "llava-phi3:3.8b"
 
-# prompt for the LLM
+# Prompt for the LLM
 prompt = """
 You are an AI assistant designed to grade homework assignments against a key. You will recieve the key first, then the homework
 assignment you will grade. 
@@ -71,17 +71,17 @@ while True:
     # Append the assignment name to the dictionary
     data['assignment_name'][str(repeat)] = assignment_name
     print(data)
-    os.system('clear')
+    #os.system('clear')
     will_continue = input("Would you like to enter more assignments? (Y/N): ")
     if will_continue == "Y" or will_continue == "y" or will_continue == "Yes" or will_continue == "yes":
         continue
     if will_continue == "N" or will_continue == "n" or will_continue == "no" or will_continue == "No":
         break
 
-os.system('clear')
-for i in range(1, len(data['homework'])):
-    for x in range(1, len(data['homework'][i])):
-        with open(data['keys'][i](x), "rb") as key, open(data['homework'][i](x), "rb") as homework:
+#os.system('clear')
+for i in range(1, len(data['homework']) + 1):
+    for x in range(0, len(data['homework'][str(i)])):
+        with open(data['keys'][str(i)][x], "rb") as key, open(data['homework'][str(i)][x], "rb") as homework:
             response = ollama.chat(
                 model=model,
                 messages=[
