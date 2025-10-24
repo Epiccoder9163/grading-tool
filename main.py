@@ -1,22 +1,21 @@
 import ollama
 import libinput
 import os
-import time
-from langchain_community.chat_models import ChatOllama
 
 # The LLM used in the program
 # Make sure it is an Ollama-compatible model
-model = "llava-phi3:3.8b"
+model = "granite3.2-vision:latest"
 
 # Prompt for the LLM
 prompt = """
 You are an AI assistant designed to grade homework assignments against a key. You will recieve the key first, then the homework
-assignment you will grade. 
-
+assignment you will grade. You will score the assignment as a percentage out of 100, with just the number. DO NOT INCLUDE ANY OTHER FEEDBACK OR TEXT, JUST REPORT A
+NUMBER ANSWER.
 """
 
 # Initialize variables
 homework_list = []
+keys = []
 repeat = 0
 
 # Create dictionaries
@@ -42,9 +41,6 @@ else:
     print("Downloading now")
     ollama.pull(model)
 
-# Create LLM object
-vision_llm = ChatOllama(base_url="http://localhost:11434", model=model)
-
 while True:
     repeat += 1
 
@@ -62,10 +58,10 @@ while True:
             break
         
     os.system('clear')
-    key = libinput.get_key()
+    keys.append(libinput.get_key())
 
     # Append the key value to the dictionary
-    data['keys'][str(repeat)] = key
+    data['keys'][str(repeat)] = keys
     # Append the homework path list to the dictionary
     data['homework'][str(repeat)] = homework_list
     # Append the assignment name to the dictionary
@@ -78,9 +74,10 @@ while True:
     if will_continue == "N" or will_continue == "n" or will_continue == "no" or will_continue == "No":
         break
 
-#os.system('clear')
 for i in range(1, len(data['homework']) + 1):
     for x in range(0, len(data['homework'][str(i)])):
+        print(data['keys'][str(i)][x])
+        print(data['homework'][str(i)][x])
         with open(data['keys'][str(i)][x], "rb") as key, open(data['homework'][str(i)][x], "rb") as homework:
             response = ollama.chat(
                 model=model,
@@ -92,4 +89,5 @@ for i in range(1, len(data['homework']) + 1):
                     }
                 ]
             )
-        print(response)
+        cleaned = response.strip
+        print(cleaned)
