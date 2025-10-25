@@ -4,7 +4,7 @@ import os
 
 # The LLM used in the program
 # Make sure it is an Ollama-compatible model
-model = "granite3.2-vision:latest"
+model = "gemma3:latest"
 
 # Prompt for the LLM
 prompt = """
@@ -89,5 +89,5 @@ for i in range(1, len(data['homework']) + 1):
                     }
                 ]
             )
-        cleaned = response.strip
+        cleaned = response
         print(cleaned)
