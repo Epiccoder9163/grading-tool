@@ -1,5 +1,6 @@
 import ollama
 import libinput
+import inference
 import os
 
 # The LLM used in the program
@@ -78,16 +79,4 @@ for i in range(1, len(data['homework']) + 1):
     for x in range(0, len(data['homework'][str(i)])):
         print(data['keys'][str(i)][x])
         print(data['homework'][str(i)][x])
-        with open(data['keys'][str(i)][x], "rb") as key, open(data['homework'][str(i)][x], "rb") as homework:
-            response = ollama.chat(
-                model=model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                        "images": [key.read(), homework.read()]
-                    }
-                ]
-            )
-        cleaned = response
-        print(cleaned)
+        print(inference.run(data['homework'][str(i)][x]))
