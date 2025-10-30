@@ -5,3 +5,4 @@ __pycache__/libinput.cpython-310.pyc
 /venv
 tempCodeRunnerFile.python
 /.venv
+*.whl
