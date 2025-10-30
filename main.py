@@ -1,4 +1,3 @@
-import ollama
 import libinput
 import inference
 import os
@@ -32,15 +31,6 @@ grading_data = {
 data['keys'] = {}
 data['homework'] = {}
 data['assignment_name'] = {}
-
-# Check if the model exists and ollama is working
-print(ollama.list())
-if model in str(ollama.list()):
-    print("The selected model is available!")
-else:
-    print("The selected model is not available!")
-    print("Downloading now")
-    ollama.pull(model)
 
 while True:
     repeat += 1
