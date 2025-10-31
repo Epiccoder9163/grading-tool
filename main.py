@@ -1,5 +1,6 @@
 import libinput
 import inference
+import grade
 import ollama
 import os
 
@@ -9,18 +10,20 @@ keys = []
 repeat = 0
 
 # Create dictionaries
-paths = {
-    'Title': 'paths'
-}
+paths = {}
 
-grading_data = {
-    'Title': 'Grading_data'
-}
+data = {}
+
+graded = {}
 
 # Initialize dictionary sections
 paths['keys'] = {}
 paths['homework'] = {}
 paths['assignment_name'] = {}
+
+data['keys'] = {}
+data['homework'] = {}
+
 
 # List installed models
 models = ollama.list()
@@ -29,6 +32,7 @@ ollama.pull(inference.model)
 
 
 while True:
+    # Count the number of times this loop as run
     repeat += 1
 
     os.system('clear')
@@ -62,10 +66,33 @@ while True:
         break
 
 # Loop for as many times as there are homework path lists in the paths dictionary
+# The loop starts at one to make the dictionary item valid, because zero isn't a valid number
 for i in range(1, len(paths['homework']) + 1):
-    # Loop for as many times as there are 
+    # Loop for as many times as there are paths in the homework path list
     for x in range(0, len(paths['homework'][str(i)])):
-        print(paths['keys'][str(i)][x])
         print(paths['homework'][str(i)][x])
-        print(inference.run(paths['homework'][str(i)][x]))
-        print(inference.run(paths['keys'][str(i)][x]))
+        output = inference.run(paths['homework'][str(i)][x])
+
+        # Parse the output to turn it into a list
+        result = [item.split(":")[1].strip() for item in output.split(",")]
+
+        # Append the homework path to the list
+        data['homework'][str(i)] = result
+
+    # Loop for as many times as there are paths in the key list (in case the lists are not of equal sizes)
+    for x in range(0, len(paths['keys'][str(i)])):
+        print(paths['keys'][str(i)][x])
+        output = inference.run(paths['keys'][str(i)][x])
+
+        # Parse the output to turn it into a list
+        result = [item.split(":")[1].strip() for item in output.split(",")]
+
+        # Append the key path to the list
+        data['keys'][str(i)] = result
+
+# Loop for as many times as there are homework question data in the data dictionary
+# The loop starts at one to make the dictionary item valid, because zero isn't a valid number
+for i in range(1, len(data['homework']) + 1):
+    graded[str(i)] = grade.run(data['homework'][str(i)], data['keys'][str(i)])
+
+print(graded)
