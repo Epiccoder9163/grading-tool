@@ -1,17 +1,8 @@
 import libinput
 import inference
+import grade
+import ollama
 import os
-
-# The LLM used in the program
-# Make sure it is an Ollama-compatible model
-model = "gemma3:latest"
-
-# Prompt for the LLM
-prompt = """
-You are an AI assistant designed to grade homework assignments against a key. You will recieve the key first, then the homework
-assignment you will grade. You will score the assignment as a percentage out of 100, with just the number. DO NOT INCLUDE ANY OTHER FEEDBACK OR TEXT, JUST REPORT A
-NUMBER ANSWER.
-"""
 
 # Initialize variables
 homework_list = []
@@ -19,20 +10,29 @@ keys = []
 repeat = 0
 
 # Create dictionaries
-data = {
-    'Title': 'data'
-}
+paths = {}
 
-grading_data = {
-    'Title': 'Grading_data'
-}
+data = {}
+
+graded = {}
 
 # Initialize dictionary sections
+paths['keys'] = {}
+paths['homework'] = {}
+paths['assignment_name'] = {}
+
 data['keys'] = {}
 data['homework'] = {}
-data['assignment_name'] = {}
+
+
+# List installed models
+models = ollama.list()
+print(models)
+ollama.pull(inference.model)
+
 
 while True:
+    # Count the number of times this loop as run
     repeat += 1
 
     os.system('clear')
@@ -52,21 +52,47 @@ while True:
     keys.append(libinput.get_key())
 
     # Append the key value to the dictionary
-    data['keys'][str(repeat)] = keys
+    paths['keys'][str(repeat)] = keys
     # Append the homework path list to the dictionary
-    data['homework'][str(repeat)] = homework_list
+    paths['homework'][str(repeat)] = homework_list
     # Append the assignment name to the dictionary
-    data['assignment_name'][str(repeat)] = assignment_name
-    print(data)
-    #os.system('clear')
+    paths['assignment_name'][str(repeat)] = assignment_name
+    print(paths)
+    os.system('clear')
     will_continue = input("Would you like to enter more assignments? (Y/N): ")
     if will_continue == "Y" or will_continue == "y" or will_continue == "Yes" or will_continue == "yes":
         continue
     if will_continue == "N" or will_continue == "n" or will_continue == "no" or will_continue == "No":
         break
 
+# Loop for as many times as there are homework path lists in the paths dictionary
+# The loop starts at one to make the dictionary item valid, because zero isn't a valid number
+for i in range(1, len(paths['homework']) + 1):
+    # Loop for as many times as there are paths in the homework path list
+    for x in range(0, len(paths['homework'][str(i)])):
+        print(paths['homework'][str(i)][x])
+        output = inference.run(paths['homework'][str(i)][x])
+
+        # Parse the output to turn it into a list
+        result = [item.split(":")[1].strip() for item in output.split(",")]
+
+        # Append the homework path to the list
+        data['homework'][str(i)] = result
+
+    # Loop for as many times as there are paths in the key list (in case the lists are not of equal sizes)
+    for x in range(0, len(paths['keys'][str(i)])):
+        print(paths['keys'][str(i)][x])
+        output = inference.run(paths['keys'][str(i)][x])
+
+        # Parse the output to turn it into a list
+        result = [item.split(":")[1].strip() for item in output.split(",")]
+
+        # Append the key path to the list
+        data['keys'][str(i)] = result
+
+# Loop for as many times as there are homework question data in the data dictionary
+# The loop starts at one to make the dictionary item valid, because zero isn't a valid number
 for i in range(1, len(data['homework']) + 1):
-    for x in range(0, len(data['homework'][str(i)])):
-        print(data['keys'][str(i)][x])
-        print(data['homework'][str(i)][x])
-        print(inference.run(data['homework'][str(i)][x]))
+    graded[str(i)] = grade.run(data['homework'][str(i)], data['keys'][str(i)])
+
+print(graded)
