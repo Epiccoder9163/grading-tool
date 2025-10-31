@@ -18,3 +18,4 @@ A LLM-based grading tool to help teachers grade assignments
 ## Limitations
  - Can only take image files (.png or .jpeg), no PDFs or other documents
  - Can only accept multiple choice or simple numerical answers, no special math characters.
+ - Answers have to be boxed or highlighted for the LLM to find the answer correctly, otherwise it won't work
