@@ -1,5 +1,6 @@
 # LLM Grading Tool
-A LLM-based grading tool to help teachers grade math and science tests and quizzes.
+A LLM-based grading tool to help teachers grade assignments
+
 ### This tool is a work in progress and should NOT be used in a production environment where the accuracy of the result is vital.
 
 ## How to install
@@ -10,5 +11,10 @@ A LLM-based grading tool to help teachers grade math and science tests and quizz
 5. python3 ./main.py
 
 ## Usage
-- To do
+1. Run main.py
+2. Insert your file paths
+3. Wait for your results
 
+## Limitations
+ - Can only take image files (.png or .jpeg), no PDFs or other documents
+ - Can only accept multiple choice or simple numerical answers, no special math characters.
