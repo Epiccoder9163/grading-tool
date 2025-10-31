@@ -1,5 +1,6 @@
 import libinput
 import inference
+import ollama
 import os
 
 # Initialize variables
@@ -8,8 +9,8 @@ keys = []
 repeat = 0
 
 # Create dictionaries
-data = {
-    'Title': 'data'
+paths = {
+    'Title': 'paths'
 }
 
 grading_data = {
@@ -17,9 +18,15 @@ grading_data = {
 }
 
 # Initialize dictionary sections
-data['keys'] = {}
-data['homework'] = {}
-data['assignment_name'] = {}
+paths['keys'] = {}
+paths['homework'] = {}
+paths['assignment_name'] = {}
+
+# List installed models
+models = ollama.list()
+print(models)
+ollama.pull(inference.model)
+
 
 while True:
     repeat += 1
@@ -41,21 +48,24 @@ while True:
     keys.append(libinput.get_key())
 
     # Append the key value to the dictionary
-    data['keys'][str(repeat)] = keys
+    paths['keys'][str(repeat)] = keys
     # Append the homework path list to the dictionary
-    data['homework'][str(repeat)] = homework_list
+    paths['homework'][str(repeat)] = homework_list
     # Append the assignment name to the dictionary
-    data['assignment_name'][str(repeat)] = assignment_name
-    print(data)
-    #os.system('clear')
+    paths['assignment_name'][str(repeat)] = assignment_name
+    print(paths)
+    os.system('clear')
     will_continue = input("Would you like to enter more assignments? (Y/N): ")
     if will_continue == "Y" or will_continue == "y" or will_continue == "Yes" or will_continue == "yes":
         continue
     if will_continue == "N" or will_continue == "n" or will_continue == "no" or will_continue == "No":
         break
 
-for i in range(1, len(data['homework']) + 1):
-    for x in range(0, len(data['homework'][str(i)])):
-        print(data['keys'][str(i)][x])
-        print(data['homework'][str(i)][x])
-        print(inference.run(data['homework'][str(i)][x]))
+# Loop for as many times as there are homework path lists in the paths dictionary
+for i in range(1, len(paths['homework']) + 1):
+    # Loop for as many times as there are 
+    for x in range(0, len(paths['homework'][str(i)])):
+        print(paths['keys'][str(i)][x])
+        print(paths['homework'][str(i)][x])
+        print(inference.run(paths['homework'][str(i)][x]))
+        print(inference.run(paths['keys'][str(i)][x]))
