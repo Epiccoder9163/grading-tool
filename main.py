@@ -2,17 +2,6 @@ import libinput
 import inference
 import os
 
-# The LLM used in the program
-# Make sure it is an Ollama-compatible model
-model = "gemma3:latest"
-
-# Prompt for the LLM
-prompt = """
-You are an AI assistant designed to grade homework assignments against a key. You will recieve the key first, then the homework
-assignment you will grade. You will score the assignment as a percentage out of 100, with just the number. DO NOT INCLUDE ANY OTHER FEEDBACK OR TEXT, JUST REPORT A
-NUMBER ANSWER.
-"""
-
 # Initialize variables
 homework_list = []
 keys = []
