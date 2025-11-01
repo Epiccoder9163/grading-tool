@@ -32,7 +32,7 @@ jobs:
           pyinstaller gui.py
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v0
         with:
           name: grading-${{ matrix.os }}
           path: dist/
