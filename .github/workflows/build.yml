@@ -1,4 +1,4 @@
-name: Build and Release Executables
+name: Build and Release Grading Tool
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --noconfirm --onefile --windowed grading_gui.py
+          pyinstaller gui.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -47,7 +47,7 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create GitHub Release
+      - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
           files: artifacts/**/*
