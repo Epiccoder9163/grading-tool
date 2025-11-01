@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog,
-    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit
+    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit
 )
 from PyQt6.QtCore import QThread, pyqtSignal
 import inference
@@ -13,38 +13,40 @@ class GradingWorker(QThread):
     result = pyqtSignal(str)
     finished = pyqtSignal(str)
 
-    def __init__(self, homework_files, key_files):
+    def __init__(self, paths):
         super().__init__()
-        self.homework_files = homework_files
-        self.key_files = key_files
+        self.paths = paths  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
 
     def run(self):
-        homework_list = []
-        key_list = []
-        total = len(self.homework_files) + len(self.key_files)
+        graded = {}
+        total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         index = 0
 
-        # Process homework
-        for path in self.homework_files:
-            output = inference.run(path)
-            parsed = [item.split(":")[1].strip() for item in output.split(",")]
-            homework_list.extend(parsed)
-            self.result.emit(f"{Path(path).name}: {parsed}")
-            index += 1
-            self.progress.emit(int((index / total) * 100))
+        for name, files in self.paths.items():
+            homework_list = []
+            key_list = []
 
-        # Process keys
-        for path in self.key_files:
-            output = inference.run(path)
-            parsed = [item.split(":")[1].strip() for item in output.split(",")]
-            key_list.extend(parsed)
-            self.result.emit(f"{Path(path).name}: {parsed}")
-            index += 1
-            self.progress.emit(int((index / total) * 100))
+            for hw_path in files['homework']:
+                output = inference.run(hw_path)
+                parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                homework_list.extend(parsed)
+                self.result.emit(f"{Path(hw_path).name}: {parsed}")
+                index += 1
+                self.progress.emit(int((index / total) * 100))
 
-        # Grade
-        score = grade.run(homework_list, key_list)
-        self.finished.emit(f"\nFinal Grade: {score}%")
+            for key_path in files['keys']:
+                output = inference.run(key_path)
+                parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                key_list.extend(parsed)
+                self.result.emit(f"🗝️ {Path(key_path).name}: {parsed}")
+                index += 1
+                self.progress.emit(int((index / total) * 100))
+
+            score = grade.run(homework_list, key_list)
+            graded[name] = score
+            self.result.emit(f"\n{name} → Grade: {score}%")
+
+        self.finished.emit("All assignments graded.")
 
 class GradingApp(QWidget):
     def __init__(self):
@@ -52,14 +54,17 @@ class GradingApp(QWidget):
         self.setWindowTitle("Assignment Grader")
         self.resize(700, 500)
 
-        self.homework_files = []
-        self.key_files = []
+        self.paths = {}  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
 
         # Widgets
-        self.label = QLabel("Upload homework and answer key images")
-        self.pick_homework_btn = QPushButton("Upload Homework Files")
-        self.pick_key_btn = QPushButton("Upload Answer Key Files")
-        self.start_btn = QPushButton("Start Grading")
+        self.label = QLabel("Enter assignment name and upload files:")
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Assignment name")
+
+        self.pick_homework_btn = QPushButton("Add Homework Pages")
+        self.pick_key_btn = QPushButton("Add Answer Key Pages")
+        self.add_assignment_btn = QPushButton("Save Assignment")
+        self.start_btn = QPushButton("Start Batch Grading")
         self.start_btn.setEnabled(False)
 
         self.progress_bar = QProgressBar()
@@ -71,57 +76,75 @@ class GradingApp(QWidget):
         # Layout
         layout = QVBoxLayout()
         layout.addWidget(self.label)
+        layout.addWidget(self.name_input)
 
         btn_layout = QHBoxLayout()
         btn_layout.addWidget(self.pick_homework_btn)
         btn_layout.addWidget(self.pick_key_btn)
         layout.addLayout(btn_layout)
 
+        layout.addWidget(self.add_assignment_btn)
         layout.addWidget(self.start_btn)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.output_box)
 
         self.setLayout(layout)
 
+        # Temp storage for current assignment
+        self.current_homework = []
+        self.current_keys = []
+
         # Connect buttons
-        self.pick_homework_btn.clicked.connect(self.pick_homework)
-        self.pick_key_btn.clicked.connect(self.pick_keys)
+        self.pick_homework_btn.clicked.connect(self.add_homework)
+        self.pick_key_btn.clicked.connect(self.add_keys)
+        self.add_assignment_btn.clicked.connect(self.save_assignment)
         self.start_btn.clicked.connect(self.start_grading)
 
-    def pick_homework(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "Select Homework Images", "", "Images (*.png *.jpg *.jpeg)")
+    def add_homework(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "Select Homework Pages", "", "Images (*.png *.jpg *.jpeg)")
         if files:
-            self.homework_files = files
-            self.label.setText(f"{len(files)} homework file(s) selected.")
-            self.check_ready()
+            self.current_homework.extend(files)
+            self.label.setText(f"Homework pages selected: {len(self.current_homework)}")
 
-    def pick_keys(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "Select Answer Key Images", "", "Images (*.png *.jpg *.jpeg)")
+    def add_keys(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "Select Answer Key Pages", "", "Images (*.png *.jpg *.jpeg)")
         if files:
-            self.key_files = files
-            self.label.setText(f"{len(files)} key file(s) selected.")
-            self.check_ready()
+            self.current_keys.extend(files)
+            self.label.setText(f"Key pages selected: {len(self.current_keys)}")
 
-    def check_ready(self):
-        if self.homework_files and self.key_files:
+    def save_assignment(self):
+        name = self.name_input.text().strip()
+        if not name:
+            name = f"Assignment {len(self.paths) + 1}"
+        if self.current_homework and self.current_keys:
+            self.paths[name] = {
+                'homework': self.current_homework.copy(),
+                'keys': self.current_keys.copy()
+            }
+            self.output_box.append(f"Saved {name} with {len(self.current_homework)} homework and {len(self.current_keys)} key pages.")
+            self.current_homework.clear()
+            self.current_keys.clear()
+            self.name_input.clear()
+            self.label.setText("Assignment saved. You can add another or start grading.")
             self.start_btn.setEnabled(True)
+        else:
+            self.label.setText("Please select both homework and key pages before saving.")
 
     def start_grading(self):
-        self.output_box.clear()
+        self.output_box.append("\nStarting batch grading...\n")
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.show()
-        self.label.setText("Running OCR and grading...")
+        self.label.setText("Grading in progress...")
 
-        self.worker = GradingWorker(self.homework_files, self.key_files)
+        self.worker = GradingWorker(self.paths)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.result.connect(self.output_box.append)
         self.worker.finished.connect(self.show_final_result)
         self.worker.start()
 
     def show_final_result(self, message):
-        self.output_box.append(message)
-        self.label.setText("Grading complete.")
+        self.label.setText(message)
         self.progress_bar.hide()
 
 if __name__ == "__main__":
