@@ -2,3 +2,4 @@ ollama
 python-dotenv
 pillow
 PyQt6
+PyInstaller
