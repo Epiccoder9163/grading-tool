@@ -13,58 +13,25 @@ model = "qwen3-vl:8b"
 
 def run(path):
     while True:
-        response = ollama.chat(
-            model=model,
-            # Temperature = 0 reduces randomness
-            options={"temperature": 0},
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                    "images": [path],
-                }
-            ],
-        )
-        # Run the generation 3 times as a failsafe for malformed generations
+        output = []
+        # Run the generation 2 times as a failsafe for malformed generations
+        for i in range(2):
+            response = ollama.chat(
+                model=model,
+                # Temperature = 0 reduces randomness
+                options={"temperature": 0},
+                messages=[
+                    {
+                       "role": "user",
+                        "content": prompt,
+                       "images": [path],
+                    }
+                ],
+            )
+            output.append(response["message"]["content"])
+            print(output)
 
-        # Run 1
-        output = response["message"]["content"]
-        print(output)
-
-        response = ollama.chat(
-            model=model,
-            # Temperature = 0 reduces randomness
-            options={"temperature": 0},
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                    "images": [path],
-                }
-            ],
-        )
-        
-        # Run 2
-        output2 = response["message"]["content"]
-        print(output2)
-
-        response = ollama.chat(
-            model=model,
-            # Temperature = 0 reduces randomness
-            options={"temperature": 0},
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                    "images": [path],
-                }
-            ],
-        )
-
-        # Run 3
-        output3 = response["message"]["content"]
-        print(output3)
-        if output == output2 == output3:
+        if all(x == output[0] for x in output):
             # If they are all the same, continue
             print("Text detection is successful! Returning . . .")
             return output
