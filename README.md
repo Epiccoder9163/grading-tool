@@ -24,6 +24,10 @@ A LLM-based grading tool to help teachers grade assignments
     ```bash
     python3 ./main.py
     ```
+    **Or run the GUI**
+    ```bash
+    python3 ./gui.py
+    ```
 
 ## Usage
 1. Run main.py
