@@ -34,7 +34,7 @@ def run(path):
         if all(x == output[0] for x in output):
             # If they are all the same, continue
             print("Text detection is successful! Returning . . .")
-            return output
+            return output[0]
             break
         else:
             # If not, try again
