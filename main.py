@@ -25,14 +25,13 @@ data['keys'] = {}
 data['homework'] = {}
 
 
-# List installed models
-models = ollama.list()
-print(models)
-if inference.model not in models:
-    print("Model not found! Downloading")
+# Check if the selected model exists, if not download it
+try:
+  ollama.chat(inference.model)
+except ollama.ResponseError as e:
+  print('Error:', e.error)
+  if e.status_code == 404:
     ollama.pull(inference.model)
-else:
-    print("Model found! Continuing")
 
 
 while True:
@@ -95,7 +94,7 @@ for i in range(1, len(paths['homework']) + 1):
         print(result)
         
         # Append the homework path to the list
-        data['homework'][str(i)].append(result)
+        data['homework'][str(i)].extend(result)
 
     # Loop for as many times as there are paths in the key list (in case the lists are not of equal sizes)
     for x in range(0, len(paths['keys'][str(i)])):
@@ -107,7 +106,7 @@ for i in range(1, len(paths['homework']) + 1):
         print(result)
 
         # Append the key path to the list
-        data['keys'][str(i)].append(result)
+        data['keys'][str(i)].extend(result)
 
 # Loop for as many times as there are homework question data in the data dictionary
 # The loop starts at one to make the dictionary item valid, because zero isn't a valid number

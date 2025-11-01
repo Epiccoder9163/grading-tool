@@ -10,17 +10,18 @@ provide only either the alphabetical or numerical answer, not both. Use the nume
 
 # Model to be used for the LLM
 model = "qwen3-vl:8b"
-#model = "qwen3-vl:4b"
 
 def run(path):
     while True:
         output = []
+        final_response = ''
 
         # Run the generation 2 times as a failsafe for malformed generations
-        for i in range(2):
+        for i in range(1):
             response = ollama.chat(
                 model=model,
                 options={"temperature": 0},
+                stream=True,
                 messages=[
                     {
                         "role": "system",
@@ -33,8 +34,10 @@ def run(path):
                     }
                 ],
             )
-            final_response = response["message"]["content"]
-            print(final_response)
+            for chunk in response:
+                segment = chunk['message']['content']
+                print(segment, end='', flush=True)
+                final_response += segment
 
             # Save final response
             output.append(final_response)
