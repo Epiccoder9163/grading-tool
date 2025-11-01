@@ -10,32 +10,39 @@ provide only either the alphabetical or numerical answer, not both. Use the nume
 
 # Model to be used for the LLM
 model = "qwen3-vl:8b"
+#model = "qwen3-vl:4b"
 
 def run(path):
     while True:
         output = []
+
         # Run the generation 2 times as a failsafe for malformed generations
         for i in range(2):
             response = ollama.chat(
                 model=model,
-                # Temperature = 0 reduces randomness
                 options={"temperature": 0},
                 messages=[
                     {
-                       "role": "user",
+                        "role": "system",
+                        "content": "Skip reasoning, just give the result"
+                    },
+                    {
+                        "role": "user",
                         "content": prompt,
-                       "images": [path],
+                        "images": [path],
                     }
                 ],
             )
-            output.append(response["message"]["content"])
-            print(output[i])
+            final_response = response["message"]["content"]
+            print(final_response)
+
+            # Save final response
+            output.append(final_response)
 
         if all(x == output[0] for x in output):
             # If they are all the same, continue
             print("Text detection is successful! Returning . . .")
             return output[0]
-            break
         else:
             # If not, try again
             print("Model's output is likely inaccurate!")

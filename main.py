@@ -28,7 +28,11 @@ data['homework'] = {}
 # List installed models
 models = ollama.list()
 print(models)
-ollama.pull(inference.model)
+if inference.model not in models:
+    print("Model not found! Downloading")
+    ollama.pull(inference.model)
+else:
+    print("Model found! Continuing")
 
 
 while True:
@@ -49,7 +53,16 @@ while True:
             break
         
     os.system('clear')
-    keys.append(libinput.get_key())
+    while True:
+        key = libinput.get_key()
+        os.system('clear')
+        will_continue = input("Would you like to enter more pages? (Y/N): ")
+        if will_continue == "Y" or will_continue == "y" or will_continue == "Yes" or will_continue == "yes":
+            keys.append(key)
+            continue
+        if will_continue == "N" or will_continue == "n" or will_continue == "no" or will_continue == "No":
+            keys.append(key)
+            break
 
     # Append the key value to the dictionary
     paths['keys'][str(repeat)] = keys
@@ -68,6 +81,10 @@ while True:
 # Loop for as many times as there are homework path lists in the paths dictionary
 # The loop starts at one to make the dictionary item valid, because zero isn't a valid number
 for i in range(1, len(paths['homework']) + 1):
+    # Initialize lists
+    data['homework'][str(i)] = []
+    data['keys'][str(i)] = []
+
     # Loop for as many times as there are paths in the homework path list
     for x in range(0, len(paths['homework'][str(i)])):
         print(paths['homework'][str(i)][x])
@@ -75,9 +92,10 @@ for i in range(1, len(paths['homework']) + 1):
 
         # Parse the output to turn it into a list
         result = [item.split(":")[1].strip() for item in output.split(",")]
-
+        print(result)
+        
         # Append the homework path to the list
-        data['homework'][str(i)] = result
+        data['homework'][str(i)].append(result)
 
     # Loop for as many times as there are paths in the key list (in case the lists are not of equal sizes)
     for x in range(0, len(paths['keys'][str(i)])):
@@ -86,9 +104,10 @@ for i in range(1, len(paths['homework']) + 1):
 
         # Parse the output to turn it into a list
         result = [item.split(":")[1].strip() for item in output.split(",")]
+        print(result)
 
         # Append the key path to the list
-        data['keys'][str(i)] = result
+        data['keys'][str(i)].append(result)
 
 # Loop for as many times as there are homework question data in the data dictionary
 # The loop starts at one to make the dictionary item valid, because zero isn't a valid number
