@@ -1,3 +1,4 @@
 ollama
 python-dotenv
 pillow
+PyQt6

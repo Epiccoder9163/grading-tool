@@ -3,6 +3,13 @@ import base64
 from io import BytesIO
 from PIL import Image
 
+def get_folder():
+    folder = input("Enter the full extended file path of the folder: ")
+    if os.path.isdir(folder):
+        return folder
+    else:
+        print("This path is invalid! Check that the folder exists and is a directory.")
+        
 def get_key():
     while True:
         while True:
