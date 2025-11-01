@@ -29,7 +29,7 @@ def run(path):
                 ],
             )
             output.append(response["message"]["content"])
-            print(output)
+            print(output[i])
 
         if all(x == output[0] for x in output):
             # If they are all the same, continue
