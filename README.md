@@ -2,6 +2,10 @@
 A LLM-based grading tool to help teachers grade assignments
 
 ### This tool is a work in progress and should NOT be used in a production environment where the accuracy of the result is vital.
+
+This program has only been tested on Ubuntu 24.04 LTS with an AMD RX 9060 XT, but is also confirmed working with an NVIDIA GPU.
+This program should work with any Ollama supported GPU and operating system, but your mileage may vary.
+
 ## How to install
 1. **Clone the repository**
    ```bash
@@ -39,3 +43,4 @@ A LLM-based grading tool to help teachers grade assignments
  - Can only accept multiple choice or simple numerical answers, no special math characters.
  - Answers have to be boxed or highlighted for the LLM to find the answer correctly, otherwise it won't work
  - This program does need ollama to run, you can install it at https://ollama.com
+
