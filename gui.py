@@ -38,7 +38,7 @@ class GradingWorker(QThread):
                 output = inference.run(key_path)
                 parsed = [item.split(":")[1].strip() for item in output.split(",")]
                 key_list.extend(parsed)
-                self.result.emit(f"🗝️ {Path(key_path).name}: {parsed}")
+                self.result.emit(f"{Path(key_path).name}: {parsed}")
                 index += 1
                 self.progress.emit(int((index / total) * 100))
 
