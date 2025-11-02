@@ -5,7 +5,8 @@ prompt = """
 You have been given a student's homework assignment. Your job is to find the student's answer (this could be numerical or alphabetical) 
 and output it as follows, with (answer) being the answer that you found previously, and (question number) 
 being the number of the question that corresponds to the answer you found previously; (question number): (answer), (question number): (answer), (question number): (answer)
-provide only either the alphabetical or numerical answer, not both. Use the numerical answer first if there is one, if not use the alphabetical answer.
+provide only either the alphabetical or numerical answer, not both. Use the numerical answer first if there is one, if not use the alphabetical answer. Don't check the student's
+answer with your knowledge, just find what they answered and output it.
 """
 
 # Model to be used for the LLM

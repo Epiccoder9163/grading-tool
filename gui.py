@@ -131,7 +131,7 @@ class GradingApp(QWidget):
             self.label.setText("Please select both homework and key pages before saving.")
 
     def start_grading(self):
-        self.output_box.append("\nStarting batch grading...\n")
+        self.output_box.append("\nGrading...\n")
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.show()
