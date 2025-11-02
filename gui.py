@@ -64,7 +64,7 @@ class GradingApp(QWidget):
         self.pick_homework_btn = QPushButton("Add Homework Pages")
         self.pick_key_btn = QPushButton("Add Answer Key Pages")
         self.add_assignment_btn = QPushButton("Save Assignment")
-        self.start_btn = QPushButton("Start Batch Grading")
+        self.start_btn = QPushButton("Start Grading")
         self.start_btn.setEnabled(False)
 
         self.progress_bar = QProgressBar()

@@ -24,6 +24,10 @@ def run(path):
                 stream=True,
                 messages=[
                     {
+                        "role": "system",
+                        "content": "Skip reasoning, just give the result"
+                    },
+                    {
                         "role": "user",
                         "content": prompt,
                         "images": [path],
@@ -32,9 +36,12 @@ def run(path):
                 think=False
             )
             for chunk in response:
-                segment = chunk['message']['content']
-                print(segment, end='', flush=True)
-                final_response += segment
+                thinking = chunk.get("message", {}).get("thinking")
+                if thinking:
+                    print(thinking, end='', flush=True)
+                print(chunk['message']['content'], end='', flush=True)
+                final_response += chunk['message']['content']
+
 
             # Save final response
             output.append(final_response)
