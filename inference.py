@@ -16,7 +16,7 @@ def run(path):
         output = []
         final_response = ''
 
-        # Run the generation 2 times as a failsafe for malformed generations
+        # Run the generation any amount of times as a failsafe for malformed generations
         for i in range(1):
             response = ollama.chat(
                 model=model,
@@ -24,15 +24,12 @@ def run(path):
                 stream=True,
                 messages=[
                     {
-                        "role": "system",
-                        "content": "Skip reasoning, just give the result"
-                    },
-                    {
                         "role": "user",
                         "content": prompt,
                         "images": [path],
                     }
                 ],
+                think=False
             )
             for chunk in response:
                 segment = chunk['message']['content']
