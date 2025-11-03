@@ -8,6 +8,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 import inference
 import grade
 
+# Worker class for grading assignments via gui
 class GradingWorker(QThread):
     gui_state = pyqtSignal(bool)
     progress = pyqtSignal(int)
@@ -19,6 +20,7 @@ class GradingWorker(QThread):
         self.paths = paths  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
 
     def run(self):
+        # Change UI state, disable button
         self.gui_state.emit(False)
         graded = {}
         total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
@@ -58,6 +60,7 @@ class GradingWorker(QThread):
         # Enable and disable text boxes when the assignments are done grading
         self.gui_state.emit(True)
 
+# Class used to build GUI 
 class GradingApp(QWidget):
     # When new text is added, scroll to the bottom automatically
     def append_and_scroll(self, text):
@@ -67,10 +70,14 @@ class GradingApp(QWidget):
         )
     def __init__(self):
         super().__init__()
+        # Set window title
         self.setWindowTitle("Assignment Grader")
+        # Set default window size
         self.resize(700, 500)
 
         self.paths = {}  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
+
+        # Build GUI
 
         # Widgets
         self.label = QLabel("Enter assignment name and upload files:")
@@ -117,12 +124,14 @@ class GradingApp(QWidget):
         self.start_btn.clicked.connect(self.start_grading)
 
     def add_homework(self):
+        # File picker
         files, _ = QFileDialog.getOpenFileNames(self, "Select Homework Pages", "", "Images (*.png *.jpg *.jpeg)")
         if files:
             self.current_homework.extend(files)
             self.label.setText(f"Homework pages selected: {len(self.current_homework)}")
 
     def add_keys(self):
+        # File picker
         files, _ = QFileDialog.getOpenFileNames(self, "Select Answer Key Pages", "", "Images (*.png *.jpg *.jpeg)")
         if files:
             self.current_keys.extend(files)
@@ -160,6 +169,7 @@ class GradingApp(QWidget):
         self.progress_bar.show()
         self.label.setText("Grading in progress...")
 
+        # Listeners to listen for UI changes, and update the UI as needed
         self.worker = GradingWorker(self.paths)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.result.connect(self.append_and_scroll)
@@ -173,6 +183,7 @@ class GradingApp(QWidget):
         self.progress_bar.hide()
 
 if __name__ == "__main__":
+    # Initialize program
     app = QApplication(sys.argv)
     window = GradingApp()
     window.show()

@@ -1,8 +1,6 @@
 import ollama
 
 # Prompt to be used for the LLM
-# TO DO
-# IMPROVE PROMPT FOR SPEED AND CONSISENESS
 prompt = """
 You have been given a student's homework assignment. Your job is to find the student's answer (this could be numerical or alphabetical) 
 and output it as follows, with (answer) being the answer that you found previously, and (question number) 
@@ -42,8 +40,7 @@ def guirun(path, self):
                 thinking = chunk.get("message", {}).get("thinking")
                 if thinking:
                     print(thinking, end='', flush=True)
-                    for char in thinking:
-                        self.result.emit(char)
+                    self.result.emit(thinking)   
                 print(chunk['message']['content'], end='', flush=True)
                 final_response += chunk['message']['content']
 
@@ -60,9 +57,9 @@ def guirun(path, self):
             print("Model's output is likely inaccurate!")
             print("Trying again . . .")
 
+
+# Old run function, used in main.py
 def run(path):
-    # TO DO 
-    # RESEARCH SPEED OPTIMIZATIONS
     while True:
         output = []
         final_response = ''
