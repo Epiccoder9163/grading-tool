@@ -4,11 +4,20 @@ import ollama
 
 # Prompt to be used for the LLM
 prompt = """
-You have been given a student's homework assignment. Your job is to find the student's answer (this could be numerical or alphabetical) 
-and output it as follows, with (answer) being the answer that you found previously, and (question number) 
-being the number of the question that corresponds to the answer you found previously; (question number): (answer), (question number): (answer), (question number): (answer)
-provide only either the alphabetical or numerical answer, not both. Use the numerical answer first if there is one, if not use the alphabetical answer. Don't check the student's
-answer with your knowledge, just find what they answered and output it. You also don't have to check your answer multiple times unless you think it is absolutely necessary.
+You are given an image of either a student's homework or an answer key. Your task is to extract the answers provided for each question.
+
+For each question, output the answer in the format:
+(question number): (answer)
+
+Rules:
+- Only extract what is written—do not verify correctness.
+- Prefer numerical answers; if none, use alphabetical.
+- Output only one answer per question.
+- Do not include explanations or extra formatting.
+- Avoid redundant checks.
+
+Example output:
+1: 42, 2: B, 3: 17
 """
 
 # Model to be used for the LLM
@@ -21,6 +30,7 @@ def guirun(path, self):
 
         # Run the generation any amount of times as a failsafe for malformed generations
         for i in range(1):
+            self.result.emit("\n")
             response = ollama.chat(
                 model=model,
                 options={"temperature": 0},
@@ -41,23 +51,26 @@ def guirun(path, self):
             for chunk in response:
                 thinking = chunk.get("message", {}).get("thinking")
                 if thinking:
-                    print(thinking, end='', flush=True)
-                    self.result.emit(thinking)   
-                print(chunk['message']['content'], end='', flush=True)
+                    self.result.emit(thinking)
+                if chunk['message']['content'] == "":
+                    nocontent = True
+                if chunk['message']['content'] != "" and nocontent == True:
+                    nocontent = False
+                    self.result.emit("\n")
+                self.result.emit(chunk['message']['content'])
                 final_response += chunk['message']['content']
 
 
             # Save final response
             output.append(final_response)
+            self.result.emit("\n")
 
         if all(x == output[0] for x in output):
             # If they are all the same, continue
-            print("Text detection is successful! Returning . . .")
             return output[0]
         else:
             # If not, try again
-            print("Model's output is likely inaccurate!")
-            print("Trying again . . .")
+            continue
 
 
 # Old run function, used in main.py

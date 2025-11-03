@@ -4,15 +4,17 @@ import sys
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog,
-    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit
+    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox
 )
 from PyQt6.QtCore import QThread, pyqtSignal
 import inference
 import grade
+import export
 
 # Worker class for grading assignments via gui
 class GradingWorker(QThread):
     gui_state = pyqtSignal(bool)
+    export_btn_signal = pyqtSignal(bool)
     progress = pyqtSignal(int)
     result = pyqtSignal(str)
     finished = pyqtSignal(str)
@@ -22,9 +24,14 @@ class GradingWorker(QThread):
         self.paths = paths  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
 
     def run(self):
+        global grades
+
         # Change UI state, disable button
         self.gui_state.emit(False)
+        self.export_btn_signal.emit(False)
+
         graded = {}
+        grades = []
         total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         index = 0
         for name, files in self.paths.items():
@@ -56,14 +63,19 @@ class GradingWorker(QThread):
 
             score = grade.run(homework_list, key_list)
             graded[name] = score
-            self.result.emit(f"\n{name} → Grade: {score}%")
+            grades.append(score)
 
         self.finished.emit("All assignments graded.")
+        # Add all grades in output box when finished
+        for i in range(0, len(grades)):
+            self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
         # Enable and disable text boxes when the assignments are done grading
+        self.export_btn_signal.emit(True)
         self.gui_state.emit(True)
 
 # Class used to build GUI 
 class GradingApp(QWidget):
+
     # When new text is added, scroll to the bottom automatically
     def append_and_scroll(self, text):
         self.output_box.insertPlainText(text)
@@ -90,6 +102,11 @@ class GradingApp(QWidget):
         self.pick_key_btn = QPushButton("Add Answer Key Pages")
         self.add_assignment_btn = QPushButton("Save Assignment")
         self.start_btn = QPushButton("Start Grading")
+        self.export_btn = QPushButton("Export Data")
+        self.export_type = QComboBox()
+        self.export_type.addItems(export.types)
+        self.export_btn.setEnabled(False)
+        self.export_type.setEnabled(False)
         self.start_btn.setEnabled(False)
 
         self.progress_bar = QProgressBar()
@@ -110,6 +127,8 @@ class GradingApp(QWidget):
 
         layout.addWidget(self.add_assignment_btn)
         layout.addWidget(self.start_btn)
+        layout.addWidget(self.export_type)
+        layout.addWidget(self.export_btn)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.output_box)
 
@@ -124,6 +143,8 @@ class GradingApp(QWidget):
         self.pick_key_btn.clicked.connect(self.add_keys)
         self.add_assignment_btn.clicked.connect(self.save_assignment)
         self.start_btn.clicked.connect(self.start_grading)
+        self.export_btn.clicked.connect(self.export_grades)
+        self.export_type.currentTextChanged.connect(self.dropdown_changed)
 
     def add_homework(self):
         # File picker
@@ -140,9 +161,13 @@ class GradingApp(QWidget):
             self.label.setText(f"Key pages selected: {len(self.current_keys)}")
 
     def save_assignment(self):
+        global names_list
+        if 'names_list' not in globals():
+            names_list = []
         name = self.name_input.text().strip()
         if not name:
             name = f"Assignment {len(self.paths) + 1}"
+        names_list.append(name)
         if self.current_homework and self.current_keys:
             self.paths[name] = {
                 'homework': self.current_homework.copy(),
@@ -157,12 +182,26 @@ class GradingApp(QWidget):
         else:
             self.label.setText("Please select both homework and key pages before saving.")
 
+    def export_grades(self):
+        export_type = self.export_type.currentText().lower()
+
+        getattr(export, f"to_{export_type}")(names_list, grades)
+
+
+
+    def toggle_export_btn(self, enabled):
+        self.export_btn.setEnabled(enabled)
+        self.export_type.setEnabled(enabled)
+
     def toggle_inputs(self, enabled):
         self.name_input.setEnabled(enabled)
         self.add_assignment_btn.setEnabled(enabled)
         self.pick_key_btn.setEnabled(enabled)
         self.pick_homework_btn.setEnabled(enabled)
         self.start_btn.setEnabled(enabled)
+    
+    def dropdown_changed(self, text):
+        self.output_box.append(f"\n {text} export type selected.")
 
     def start_grading(self):
         self.output_box.append("\nGrading...\n")
@@ -177,6 +216,7 @@ class GradingApp(QWidget):
         self.worker.result.connect(self.append_and_scroll)
         self.worker.finished.connect(self.show_final_result)
         self.worker.gui_state.connect(self.toggle_inputs)
+        self.worker.export_btn_signal.connect(self.toggle_export_btn)
         self.worker.start()
 
 

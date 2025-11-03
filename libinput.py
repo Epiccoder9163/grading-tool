@@ -1,4 +1,5 @@
 # Old input library script
+# !!! As main.py will not be updated anymore, libinput.py will not be updated either, all changes are being merged into gui.py
 # !!! This script is only used in main.py, not used in gui.py
 
 import os

@@ -7,3 +7,5 @@ tempCodeRunnerFile.python
 /.venv
 /build/gui
 /dist
+grades.csv
+grades.txt
