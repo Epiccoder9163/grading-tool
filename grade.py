@@ -1,3 +1,5 @@
+# Script used to gather percentage average of questions
+
 def run(homework_list, key_list):
     numright = 0
 

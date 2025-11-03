@@ -1,3 +1,5 @@
+# Script used to inference with LLM
+
 import ollama
 
 # Prompt to be used for the LLM

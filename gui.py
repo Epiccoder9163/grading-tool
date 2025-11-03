@@ -1,3 +1,5 @@
+# Script used for GUI
+
 import sys
 from pathlib import Path
 from PyQt6.QtWidgets import (

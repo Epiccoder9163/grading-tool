@@ -1,3 +1,6 @@
+# !!! main.py will not be updated any more, all changes are being made to gui.py
+# Script used to run TTY version of this program, run gui.py for the gui version
+
 import libinput
 import inference
 import grade

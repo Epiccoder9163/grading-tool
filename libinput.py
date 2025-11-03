@@ -1,3 +1,6 @@
+# Old input library script
+# !!! This script is only used in main.py, not used in gui.py
+
 import os
 import base64
 from io import BytesIO
