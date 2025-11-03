@@ -21,23 +21,30 @@ class GradingWorker(QThread):
         graded = {}
         total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         index = 0
-
+        # TO DO 
+        # ADD THINKING OUTPUT TO GUI
         for name, files in self.paths.items():
             homework_list = []
             key_list = []
 
             for hw_path in files['homework']:
+                # Inference with the LLM
                 output = inference.run(hw_path)
+                # Parse the output
                 parsed = [item.split(":")[1].strip() for item in output.split(",")]
                 homework_list.extend(parsed)
+                # Show the output in the GUI
                 self.result.emit(f"{Path(hw_path).name}: {parsed}")
                 index += 1
                 self.progress.emit(int((index / total) * 100))
 
             for key_path in files['keys']:
+                # Inference with the LLM
                 output = inference.run(key_path)
+                # Parse the output
                 parsed = [item.split(":")[1].strip() for item in output.split(",")]
                 key_list.extend(parsed)
+                # Show the output in the GUI
                 self.result.emit(f"{Path(key_path).name}: {parsed}")
                 index += 1
                 self.progress.emit(int((index / total) * 100))

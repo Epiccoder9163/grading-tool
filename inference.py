@@ -1,6 +1,8 @@
 import ollama
 
 # Prompt to be used for the LLM
+# TO DO
+# IMPROVE PROMPT FOR SPEED AND CONSISENESS
 prompt = """
 You have been given a student's homework assignment. Your job is to find the student's answer (this could be numerical or alphabetical) 
 and output it as follows, with (answer) being the answer that you found previously, and (question number) 
@@ -13,6 +15,8 @@ answer with your knowledge, just find what they answered and output it.
 model = "qwen3-vl:8b"
 
 def run(path):
+    # TO DO 
+    # RESEARCH SPEED OPTIMIZATIONS
     while True:
         output = []
         final_response = ''
