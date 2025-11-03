@@ -88,7 +88,6 @@ class GradingApp(QWidget):
 
         self.output_box = QTextEdit()
         self.output_box.setReadOnly(True)
-        self.output_box.setEnabled(False)
 
         # Layout
         layout = QVBoxLayout()
@@ -153,7 +152,6 @@ class GradingApp(QWidget):
         self.pick_key_btn.setEnabled(enabled)
         self.pick_homework_btn.setEnabled(enabled)
         self.start_btn.setEnabled(enabled)
-        self.output_box.setEnabled(not enabled)
 
     def start_grading(self):
         self.output_box.append("\nGrading...\n")

@@ -8,7 +8,7 @@ You have been given a student's homework assignment. Your job is to find the stu
 and output it as follows, with (answer) being the answer that you found previously, and (question number) 
 being the number of the question that corresponds to the answer you found previously; (question number): (answer), (question number): (answer), (question number): (answer)
 provide only either the alphabetical or numerical answer, not both. Use the numerical answer first if there is one, if not use the alphabetical answer. Don't check the student's
-answer with your knowledge, just find what they answered and output it.
+answer with your knowledge, just find what they answered and output it. You also don't have to check your answer multiple times unless you think it is absolutely necessary.
 """
 
 # Model to be used for the LLM
@@ -28,7 +28,7 @@ def guirun(path, self):
                 messages=[
                     {
                         "role": "system",
-                        "content": "Skip reasoning, just give the result"
+                        "content": "Don't overthink your prompt, just answer it."
                     },
                     {
                         "role": "user",
