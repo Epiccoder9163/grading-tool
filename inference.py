@@ -14,6 +14,52 @@ answer with your knowledge, just find what they answered and output it.
 # Model to be used for the LLM
 model = "qwen3-vl:8b"
 
+def guirun(path, self):
+    while True:
+        output = []
+        final_response = ''
+
+        # Run the generation any amount of times as a failsafe for malformed generations
+        for i in range(1):
+            response = ollama.chat(
+                model=model,
+                options={"temperature": 0},
+                stream=True,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Skip reasoning, just give the result"
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                        "images": [path],
+                    }
+                ],
+                think=False
+            )
+            for chunk in response:
+                thinking = chunk.get("message", {}).get("thinking")
+                if thinking:
+                    print(thinking, end='', flush=True)
+                    for char in thinking:
+                        self.result.emit(char)
+                print(chunk['message']['content'], end='', flush=True)
+                final_response += chunk['message']['content']
+
+
+            # Save final response
+            output.append(final_response)
+
+        if all(x == output[0] for x in output):
+            # If they are all the same, continue
+            print("Text detection is successful! Returning . . .")
+            return output[0]
+        else:
+            # If not, try again
+            print("Model's output is likely inaccurate!")
+            print("Trying again . . .")
+
 def run(path):
     # TO DO 
     # RESEARCH SPEED OPTIMIZATIONS

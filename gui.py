@@ -29,7 +29,7 @@ class GradingWorker(QThread):
 
             for hw_path in files['homework']:
                 # Inference with the LLM
-                output = inference.run(hw_path)
+                output = inference.guirun(hw_path, self)
                 # Parse the output
                 parsed = [item.split(":")[1].strip() for item in output.split(",")]
                 homework_list.extend(parsed)
@@ -40,12 +40,12 @@ class GradingWorker(QThread):
 
             for key_path in files['keys']:
                 # Inference with the LLM
-                output = inference.run(key_path)
+                output = inference.guirun(key_path, self)
                 # Parse the output
                 parsed = [item.split(":")[1].strip() for item in output.split(",")]
                 key_list.extend(parsed)
                 # Show the output in the GUI
-                self.result.emit(f"{Path(key_path).name}: {parsed}")
+                self.result.emit(f"\n{Path(key_path).name}: {parsed}")
                 index += 1
                 self.progress.emit(int((index / total) * 100))
 
@@ -146,7 +146,7 @@ class GradingApp(QWidget):
 
         self.worker = GradingWorker(self.paths)
         self.worker.progress.connect(self.progress_bar.setValue)
-        self.worker.result.connect(self.output_box.append)
+        self.worker.result.connect(self.output_box.insertPlainText)
         self.worker.finished.connect(self.show_final_result)
         self.worker.start()
 
