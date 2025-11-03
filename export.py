@@ -10,8 +10,11 @@ def to_csv(names, grades):
     # Open or create the file in the working directory.
     with open('grades.csv', 'a', newline='') as file:
         writer = csv.writer(file)
-        # Write the header
-        writer.writerow(['Name', 'Grade'])
+        reader = csv.reader(file)
+        # If the header doesn't already exist create it
+        if next(reader) != ['Name', 'Grade']:
+            # Write the header
+            writer.writerow(['Name', 'Grade'])
         # Write the data
         for name, grade in zip(names, grades):
             writer.writerow([name, grade])
