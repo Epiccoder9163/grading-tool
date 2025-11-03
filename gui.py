@@ -21,8 +21,6 @@ class GradingWorker(QThread):
         graded = {}
         total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         index = 0
-        # TO DO 
-        # ADD THINKING OUTPUT TO GUI
         for name, files in self.paths.items():
             homework_list = []
             key_list = []
@@ -34,10 +32,11 @@ class GradingWorker(QThread):
                 parsed = [item.split(":")[1].strip() for item in output.split(",")]
                 homework_list.extend(parsed)
                 # Show the output in the GUI
-                self.result.emit(f"{Path(hw_path).name}: {parsed}")
+                self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
                 index += 1
                 self.progress.emit(int((index / total) * 100))
 
+            self.result.emit("\n")
             for key_path in files['keys']:
                 # Inference with the LLM
                 output = inference.guirun(key_path, self)
@@ -54,8 +53,21 @@ class GradingWorker(QThread):
             self.result.emit(f"\n{name} → Grade: {score}%")
 
         self.finished.emit("All assignments graded.")
+        # Enable and disable text boxes when the assignments are done grading
+        GradingApp.add_assignment_btn.setEnabled(True)
+        GradingApp.pick_key_btn.setEnabled(True)
+        GradingApp.pick_homework_btn.setEnabled(True)
+        GradingApp.start_btn.setEnabled(True)
+        GradingApp.name_input.setEnabled(True)
+        GradingApp.output_box.setEnabled(False)
 
 class GradingApp(QWidget):
+    # When new text is added, scroll to the bottom automatically
+    def append_and_scroll(self, text):
+        self.output_box.insertPlainText(text)
+        self.output_box.verticalScrollBar().setValue(
+            self.output_box.verticalScrollBar().maximum()
+        )
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Assignment Grader")
@@ -79,6 +91,7 @@ class GradingApp(QWidget):
 
         self.output_box = QTextEdit()
         self.output_box.setReadOnly(True)
+        self.output_box.setEnabled(False)
 
         # Layout
         layout = QVBoxLayout()
@@ -138,6 +151,13 @@ class GradingApp(QWidget):
             self.label.setText("Please select both homework and key pages before saving.")
 
     def start_grading(self):
+        # Disable buttons and enable text box when grading is started
+        self.output_box.setEnabled(True)
+        self.name_input.setEnabled(False)
+        self.add_assignment_btn.setEnabled(False)
+        self.pick_key_btn.setEnabled(False)
+        self.pick_homework_btn.setEnabled(False)
+        self.start_btn.setEnabled(False)
         self.output_box.append("\nGrading...\n")
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(100)
@@ -146,9 +166,10 @@ class GradingApp(QWidget):
 
         self.worker = GradingWorker(self.paths)
         self.worker.progress.connect(self.progress_bar.setValue)
-        self.worker.result.connect(self.output_box.insertPlainText)
+        self.worker.result.connect(self.append_and_scroll)
         self.worker.finished.connect(self.show_final_result)
         self.worker.start()
+
 
     def show_final_result(self, message):
         self.label.setText(message)
