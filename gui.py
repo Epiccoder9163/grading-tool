@@ -9,6 +9,7 @@ import inference
 import grade
 
 class GradingWorker(QThread):
+    gui_state = pyqtSignal(bool)
     progress = pyqtSignal(int)
     result = pyqtSignal(str)
     finished = pyqtSignal(str)
@@ -18,6 +19,7 @@ class GradingWorker(QThread):
         self.paths = paths  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
 
     def run(self):
+        self.gui_state.emit(False)
         graded = {}
         total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         index = 0
@@ -54,12 +56,7 @@ class GradingWorker(QThread):
 
         self.finished.emit("All assignments graded.")
         # Enable and disable text boxes when the assignments are done grading
-        GradingApp.add_assignment_btn.setEnabled(True)
-        GradingApp.pick_key_btn.setEnabled(True)
-        GradingApp.pick_homework_btn.setEnabled(True)
-        GradingApp.start_btn.setEnabled(True)
-        GradingApp.name_input.setEnabled(True)
-        GradingApp.output_box.setEnabled(False)
+        self.gui_state.emit(True)
 
 class GradingApp(QWidget):
     # When new text is added, scroll to the bottom automatically
@@ -150,14 +147,15 @@ class GradingApp(QWidget):
         else:
             self.label.setText("Please select both homework and key pages before saving.")
 
+    def toggle_inputs(self, enabled):
+        self.name_input.setEnabled(enabled)
+        self.add_assignment_btn.setEnabled(enabled)
+        self.pick_key_btn.setEnabled(enabled)
+        self.pick_homework_btn.setEnabled(enabled)
+        self.start_btn.setEnabled(enabled)
+        self.output_box.setEnabled(not enabled)
+
     def start_grading(self):
-        # Disable buttons and enable text box when grading is started
-        self.output_box.setEnabled(True)
-        self.name_input.setEnabled(False)
-        self.add_assignment_btn.setEnabled(False)
-        self.pick_key_btn.setEnabled(False)
-        self.pick_homework_btn.setEnabled(False)
-        self.start_btn.setEnabled(False)
         self.output_box.append("\nGrading...\n")
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(100)
@@ -168,6 +166,7 @@ class GradingApp(QWidget):
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.result.connect(self.append_and_scroll)
         self.worker.finished.connect(self.show_final_result)
+        self.worker.gui_state.connect(self.toggle_inputs)
         self.worker.start()
 
 
