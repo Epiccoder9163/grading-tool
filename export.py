@@ -15,13 +15,12 @@ def to_csv(names, grades, wrong_answers):
         with open(f"{filename}.csv", 'w', newline='') as file:
             writer = csv.writer(file)
             # Write the data
-            writer.writerow(['Name', 'Grade'])
+            writer.writerow(['Name', 'Grade', 'Questions Wrong'])
     with open(f"{filename}.csv", 'a', newline='') as file:
         writer = csv.writer(file)
         # Write the data
-        for name, grade in zip(names, grades):
-            writer.writerow([name, grade])
-            writer.writerow([name, wrong_answers])
+        for name, grade, wrong_answers in zip(names, grades, wrong_answers):
+            writer.writerow([name, grade, wrong_answers])
 
     return
 
@@ -30,7 +29,8 @@ def to_txt(names, grades, wrong_answers):
     with open(f"{filename}.txt", 'a', newline='') as file:
         # Write the data
         for i in range(len(names)):
-            file.write(f"\n{names[i]}: {grades[i]}")
-            file.write(f"\n{names[i]}: {wrong_answers}")
+            file.write(f"\n{names[i]}")
+            file.write(f"\n    Grade: {grades[i]}")
+            file.write(f"\n    Wrong Answer: {wrong_answers[i]}")
 
     return

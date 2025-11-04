@@ -84,7 +84,7 @@ class GradingWorker(QThread):
         # Add all grades in output box when finished
         for i in range(0, len(grades)):
             self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
-            self.result.emit(f"\nWrong Answers: {score[1]}")
+            self.result.emit(f"\nWrong Answers: {wrong_answers[i]}")
         # Enable and disable text boxes when the assignments are done grading
         self.export_btn_signal.emit(True)
         self.gui_state.emit(True)
