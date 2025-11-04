@@ -199,10 +199,11 @@ class GradingApp(QWidget):
             self.label.setText("Please select both homework and key pages before saving.")
 
     def export_grades(self):
-        export_type = self.export_type.currentText().lower()
+        export_type = self.export_type.currentText()
+        function_name = export_type.lower()
 
         self.output_box.append(f"\n {export_type} file exported.")
-        getattr(export, f"to_{export_type}")(names_list, grades, wrong_answers)
+        getattr(export, f"to_{function_name}")(names_list, grades, wrong_answers)
 
 
 
