@@ -76,6 +76,7 @@ def guirun(path, self):
 
 
 # Old run function, used in main.py
+# !!! Function not being used anymore, will be removed in a future commit
 def run(path):
     while True:
         output = []

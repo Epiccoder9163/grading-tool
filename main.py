@@ -1,4 +1,5 @@
 # !!! main.py will not be updated any more, all changes are being made to gui.py
+# !!! Script not being used anymore, will be removed in a future commit
 # Script used to run TTY version of this program, run gui.py for the gui version
 
 import libinput
@@ -26,7 +27,6 @@ paths['assignment_name'] = {}
 
 data['keys'] = {}
 data['homework'] = {}
-
 
 # Check if the selected model exists, if not download it
 try:
