@@ -47,3 +47,8 @@ This program should work with any Ollama supported GPU and operating system, but
  - Answers have to be boxed or highlighted for the LLM to find the answer correctly, otherwise it (probably) won't work
  - This program does need ollama to run, you can install it at https://ollama.com
 
+## Credits
+ - Ollama
+   - For the LLM backend
+ -  Alibaba Cloud
+    - For the Qwen3-VL model used for text extraction
