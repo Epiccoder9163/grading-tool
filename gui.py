@@ -1,15 +1,20 @@
 # Script used for GUI
 
 import sys
+import os
+from configparser import ConfigParser
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog,
-    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox
+    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox, QDialog
 )
 from PyQt6.QtCore import QThread, pyqtSignal
 import inference
 import grade
 import export
+
+# Configuration path
+path = "config.ini"
 
 # Worker class for grading assignments via gui
 class GradingWorker(QThread):
@@ -89,9 +94,78 @@ class GradingWorker(QThread):
         self.export_btn_signal.emit(True)
         self.gui_state.emit(True)
 
+# Class used to build settings menu
+class Settings(QDialog):
+    def open_config(self):
+        global config
+        config = ConfigParser()
+
+        # Create file if it doesn't exist
+        if not os.path.exists(path):
+            with open(path, "w", encoding="utf-8") as f:
+                pass  # Just create an empty file
+
+        # Load existing config
+        config.read(path)
+
+        # Add sections and options if missing
+        if not config.has_section("General"):
+            config.add_section("General")
+        if not config.has_option("General", "Export Format"):
+            config.set("General", "Export Format", "CSV")
+        if not config.has_option("General", "Ollama Server"):
+            config.set("General", "Ollama Server", "127.0.0.1:11434")
+
+        # Write back to file
+        with open(path, "w", encoding="utf-8") as f:
+            config.write(f)
+        
+    def save_config(self, section, key, value):
+        config = ConfigParser()
+        config.read(path)
+        config.set(section, key, value)
+
+        with open(path, "w", encoding="utf-8") as file:
+            config.write(file)
+
+    # TO DO
+    # FINISH RESET CONFIG FUNCTION
+    def reset_config(self):
+        config = ConfigParser()
+        config.read(path)
+        config.set("General", "Export Format", "CSV")
+        #self.export_type.setCurrentText(config["General"][])
+        config.set("General", "Ollama Server", "127.0.0.1:11434")
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Settings")
+        self.setFixedSize(500, 300)
+
+        # TO DO
+        # Add server options to layout
+        # Make layout options reflect config file
+        layout = QVBoxLayout()
+        self.export_type = QComboBox()
+        self.export_type.addItems(export.types)
+        export_label = QLabel("Export Format:")
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(self.close)
+
+        export_layout = QHBoxLayout()
+        export_layout.addWidget(export_label)
+        export_layout.addWidget(self.export_type)
+        layout.addLayout(export_layout)
+
+        layout.addWidget(close_btn)
+
+        self.setLayout(layout)
+        
+        self.export_type.currentTextChanged.connect(lambda value: self.save_config("General", "Export Format", value))
+        self.open_config()
+
 # Class used to build GUI 
 class GradingApp(QWidget):
-
     # When new text is added, scroll to the bottom automatically
     def append_and_scroll(self, text):
         self.output_box.insertPlainText(text)
@@ -100,10 +174,11 @@ class GradingApp(QWidget):
         )
     def __init__(self):
         super().__init__()
+        self.settings = Settings
         # Set window title
         self.setWindowTitle("Assignment Grader")
         # Set default window size
-        self.resize(700, 500)
+        self.resize(700, 700)
 
         self.paths = {}  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
 
@@ -117,12 +192,10 @@ class GradingApp(QWidget):
         self.pick_homework_btn = QPushButton("Add Homework Pages")
         self.pick_key_btn = QPushButton("Add Answer Key Pages")
         self.add_assignment_btn = QPushButton("Save Assignment")
+        self.menu_btn = QPushButton("Settings")
         self.start_btn = QPushButton("Start Grading")
         self.export_btn = QPushButton("Export Data")
-        self.export_type = QComboBox()
-        self.export_type.addItems(export.types)
         self.export_btn.setEnabled(False)
-        self.export_type.setEnabled(False)
         self.start_btn.setEnabled(False)
 
         self.progress_bar = QProgressBar()
@@ -143,10 +216,10 @@ class GradingApp(QWidget):
 
         layout.addWidget(self.add_assignment_btn)
         layout.addWidget(self.start_btn)
-        layout.addWidget(self.export_type)
-        layout.addWidget(self.export_btn)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.output_box)
+        layout.addWidget(self.export_btn)
+        layout.addWidget(self.menu_btn)
 
         self.setLayout(layout)
 
@@ -160,7 +233,11 @@ class GradingApp(QWidget):
         self.add_assignment_btn.clicked.connect(self.save_assignment)
         self.start_btn.clicked.connect(self.start_grading)
         self.export_btn.clicked.connect(self.export_grades)
-        self.export_type.currentTextChanged.connect(self.dropdown_changed)
+        self.menu_btn.clicked.connect(self.show_menu)
+
+    def show_menu(self):
+        self.menu = Settings()
+        self.menu.exec() 
 
     def add_homework(self):
         # File picker
@@ -199,7 +276,7 @@ class GradingApp(QWidget):
             self.label.setText("Please select both homework and key pages before saving.")
 
     def export_grades(self):
-        export_type = self.export_type.currentText()
+        export_type = self.settings.export_type.currentText()
         function_name = export_type.lower()
 
         self.output_box.append(f"\n {export_type} file exported.")
@@ -209,7 +286,6 @@ class GradingApp(QWidget):
 
     def toggle_export_btn(self, enabled):
         self.export_btn.setEnabled(enabled)
-        self.export_type.setEnabled(enabled)
 
     def toggle_inputs(self, enabled):
         self.name_input.setEnabled(enabled)
@@ -217,9 +293,6 @@ class GradingApp(QWidget):
         self.pick_key_btn.setEnabled(enabled)
         self.pick_homework_btn.setEnabled(enabled)
         self.start_btn.setEnabled(enabled)
-    
-    def dropdown_changed(self, text):
-        self.output_box.append(f"\n {text} export type selected.")
 
     def start_grading(self):
         self.output_box.append("\nGrading...\n")
