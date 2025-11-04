@@ -25,6 +25,7 @@ class GradingWorker(QThread):
 
     def run(self):
         global grades
+        global wrong_answers
 
         # Change UI state, disable button
         self.gui_state.emit(False)
@@ -32,6 +33,7 @@ class GradingWorker(QThread):
 
         graded = {}
         grades = []
+        wrong_answers = []
         total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         index = 0
         for name, files in self.paths.items():
@@ -42,7 +44,13 @@ class GradingWorker(QThread):
                 # Inference with the LLM
                 output = inference.guirun(hw_path, self)
                 # Parse the output
-                parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                while True:
+                    try:
+                        parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                        break
+                    except IndexError:
+                        self.result.emit("Rerunning Prompt!")
+                        output = inference.guirun(hw_path, self)
                 homework_list.extend(parsed)
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
@@ -54,7 +62,13 @@ class GradingWorker(QThread):
                 # Inference with the LLM
                 output = inference.guirun(key_path, self)
                 # Parse the output
-                parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                while True:
+                    try:
+                        parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                        break
+                    except IndexError:
+                        self.result.emit("Rerunning Prompt!")
+                        output = inference.guirun(key_path, self)
                 key_list.extend(parsed)
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(key_path).name}: {parsed}")
@@ -62,13 +76,15 @@ class GradingWorker(QThread):
                 self.progress.emit(int((index / total) * 100))
 
             score = grade.run(homework_list, key_list)
-            graded[name] = score
-            grades.append(score)
+            graded[name] = score[0]
+            grades.append(score[0])
+            wrong_answers.append(score[1])
 
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
         for i in range(0, len(grades)):
             self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
+            self.result.emit(f"\nWrong Answers: {score[1]}")
         # Enable and disable text boxes when the assignments are done grading
         self.export_btn_signal.emit(True)
         self.gui_state.emit(True)
@@ -185,7 +201,8 @@ class GradingApp(QWidget):
     def export_grades(self):
         export_type = self.export_type.currentText().lower()
 
-        getattr(export, f"to_{export_type}")(names_list, grades)
+        self.output_box.append(f"\n {export_type} file exported.")
+        getattr(export, f"to_{export_type}")(names_list, grades, wrong_answers)
 
 
 

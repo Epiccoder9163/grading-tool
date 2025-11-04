@@ -3,29 +3,34 @@
 # !!! This script is only used in gui.py, not main.py
 
 import csv
+import os
 
 types = ['CSV', 'TXT']
+filename = "grades"
 
-def to_csv(names, grades):
+def to_csv(names, grades, wrong_answers):
     # Open or create the file in the working directory.
-    with open('grades.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        reader = csv.reader(file)
-        # If the header doesn't already exist create it
-        if next(reader) != ['Name', 'Grade']:
-            # Write the header
+    # If the file doesn't exist create the file and write the header
+    if os.path.exists(f"{filename}.csv") == False or os.path.getsize(f"{filename}.csv") == 0:
+        with open(f"{filename}.csv", 'w', newline='') as file:
+            writer = csv.writer(file)
+            # Write the data
             writer.writerow(['Name', 'Grade'])
+    with open(f"{filename}.csv", 'a', newline='') as file:
+        writer = csv.writer(file)
         # Write the data
         for name, grade in zip(names, grades):
             writer.writerow([name, grade])
+            writer.writerow([name, wrong_answers])
 
     return
 
-def to_txt(names, grades):
+def to_txt(names, grades, wrong_answers):
     # Open or create the file in the working directory.
-    with open('grades.txt', 'a', newline='') as file:
+    with open(f"{filename}.txt", 'a', newline='') as file:
         # Write the data
         for i in range(len(names)):
             file.write(f"\n{names[i]}: {grades[i]}")
+            file.write(f"\n{names[i]}: {wrong_answers}")
 
     return
