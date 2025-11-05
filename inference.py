@@ -25,7 +25,8 @@ Example output:
 1: 42, 2: B, 3: 17
 """
 
-# Model to be used for the LLM
+# LLM to be used
+# This has to be a vision-enabled model
 model = "qwen3-vl:8b"
 
 config = ConfigParser()
