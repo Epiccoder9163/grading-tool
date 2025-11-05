@@ -72,6 +72,8 @@ def guirun(path, self):
                 if chunk['message']['content'] != "" and nocontent == True:
                     nocontent = False
                     self.result.emit("\n")
+                    self.result.emit("Response:")
+                    self.result.emit("\n")
                 self.result.emit(chunk['message']['content'])
                 final_response += chunk['message']['content']
 

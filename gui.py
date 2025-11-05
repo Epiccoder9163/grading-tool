@@ -46,7 +46,9 @@ class GradingWorker(QThread):
         grades = []
         explanations = []
         wrong_answers = []
-        total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
+        graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
+        explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
+        print(explained_total)
         index = 0
         for name, files in self.paths.items():
             homework_list = []
@@ -67,7 +69,10 @@ class GradingWorker(QThread):
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
                 index += 1
-                self.progress.emit(int((index / total) * 100))
+                if config.get("General", "Explain Incorrect Answers") == 2:
+                    self.progress.emit(int((index / explained_total) * 100))
+                elif config.get("General", "Explain Incorrect Answers") == 0:
+                    self.progress.emit(int((index / graded_total) * 100))
 
             self.result.emit("\n")
             for key_path in files['keys']:
@@ -85,18 +90,19 @@ class GradingWorker(QThread):
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(key_path).name}: {parsed}")
                 index += 1
-                self.progress.emit(int((index / total) * 100))
-
+                if config.get("General", "Explain Incorrect Answers") == 2:
+                    self.progress.emit(int((index / explained_total) * 100))
+                elif config.get("General", "Explain Incorrect Answers") == 0:
+                    self.progress.emit(int((index / graded_total) * 100))
             score = grade.run(homework_list, key_list)
             graded[name] = score[0]
             grades.append(score[0])
             wrong_answers.append(score[1])
             self.progress.emit(0)
-            index = 0
             if int(config.get("General", "Explain Incorrect Answers")) == 2:
                 explanations = (explain.run(self, files["homework"], wrong_answers))
                 index += 1
-                self.progress.emit(int((index / total) * 100))
+                self.progress.emit(int((index / explained_total) * 100))
 
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
@@ -129,7 +135,7 @@ class Settings(QDialog):
         if not config.has_option("General", "Ollama Server"):
             config.set("General", "Ollama Server", "127.0.0.1:11434")
         if not config.has_option("General", "Explain Incorrect Answers"):
-            config.set("General", "Explain Incorrect Answers", "False")
+            config.set("General", "Explain Incorrect Answers", "0")
 
         self.export_type.setCurrentText(config.get("General", "Export Format"))
         self.server_address.setText(config.get("General", "Ollama Server"))
@@ -137,7 +143,7 @@ class Settings(QDialog):
             self.explain_answers.setChecked(True)
         elif int(config.get("General", "Explain Incorrect Answers")) == 0:
             self.explain_answers.setChecked(False)
-
+        
         # Write back to file
         with open(path, "w", encoding="utf-8") as f:
             config.write(f)
@@ -283,6 +289,8 @@ class GradingApp(QWidget):
         self.start_btn.clicked.connect(self.start_grading)
         self.export_btn.clicked.connect(self.export_grades)
         self.menu_btn.clicked.connect(self.show_menu)
+        settings = Settings()
+        settings.open_config()
 
     def show_menu(self):
         self.menu = Settings()
