@@ -29,13 +29,16 @@ Example output:
 # This has to be a vision-enabled model
 model = "qwen3-vl:8b"
 
-config = ConfigParser()
-config.read(gui.path)
-server_address = config.get("General", "Ollama Server")
 
-client = ollama.Client(host=server_address)
 
 def guirun(path, self):
+    # Initialize ollama client from configuration
+    config = ConfigParser()
+    config.read("config.ini")
+    server_address = config.get("General", "Ollama Server")
+
+    client = ollama.Client(host=server_address)
+
     while True:
         output = []
         final_response = ''
@@ -43,7 +46,7 @@ def guirun(path, self):
         # Run the generation any amount of times as a failsafe for malformed generations
         for i in range(1):
             self.result.emit("\n")
-            response = ollama.chat(
+            response = client.chat(
                 model=model,
                 options={"temperature": 0},
                 stream=True,

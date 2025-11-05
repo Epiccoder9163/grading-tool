@@ -6,7 +6,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog,
-    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox, QDialog
+    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox, QDialog, QCheckBox
 )
 from PyQt6.QtGui import QTextCursor
 from PyQt6.QtCore import QThread, pyqtSignal
@@ -28,11 +28,15 @@ class GradingWorker(QThread):
 
     def __init__(self, paths):
         super().__init__()
-        self.paths = paths  # {'Assignment Name': {'homework': [...], 'keys': [...]}}
+        self.paths = paths
 
     def run(self):
         global grades
         global wrong_answers
+        global explanations
+
+        config = ConfigParser()
+        config.read(path)
 
         # Change UI state, disable button
         self.gui_state.emit(False)
@@ -40,6 +44,7 @@ class GradingWorker(QThread):
 
         graded = {}
         grades = []
+        explanations = []
         wrong_answers = []
         total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         index = 0
@@ -86,6 +91,12 @@ class GradingWorker(QThread):
             graded[name] = score[0]
             grades.append(score[0])
             wrong_answers.append(score[1])
+            self.progress.emit(0)
+            index = 0
+            if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                explanations = (explain.run(self, files["homework"], wrong_answers))
+                index += 1
+                self.progress.emit(int((index / total) * 100))
 
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
@@ -117,9 +128,15 @@ class Settings(QDialog):
             config.set("General", "Export Format", "CSV")
         if not config.has_option("General", "Ollama Server"):
             config.set("General", "Ollama Server", "127.0.0.1:11434")
+        if not config.has_option("General", "Explain Incorrect Answers"):
+            config.set("General", "Explain Incorrect Answers", "False")
 
         self.export_type.setCurrentText(config.get("General", "Export Format"))
         self.server_address.setText(config.get("General", "Ollama Server"))
+        if int(config.get("General", "Explain Incorrect Answers")) == 2:
+            self.explain_answers.setChecked(True)
+        elif int(config.get("General", "Explain Incorrect Answers")) == 0:
+            self.explain_answers.setChecked(False)
 
         # Write back to file
         with open(path, "w", encoding="utf-8") as f:
@@ -140,6 +157,8 @@ class Settings(QDialog):
         self.export_type.setCurrentText("CSV")
         config.set("General", "Ollama Server", "127.0.0.1:11434")
         self.server_address.setText("127.0.0.1:11434")
+        config.set("General", "Explain Incorrect Answers", "False")
+        self.explain_answers.setChecked(False)
 
         with open(path, "w", encoding="utf-8") as file:
             config.write(file)
@@ -159,6 +178,9 @@ class Settings(QDialog):
         server_address_label = QLabel("Ollama Server Address:")
         self.server_address.setPlaceholderText("127.0.0.1:11434")
 
+        self.explain_answers = QCheckBox()
+        explain_answers_label = QLabel("Explain Incorrect Answers")
+
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
 
@@ -175,6 +197,11 @@ class Settings(QDialog):
         server.addWidget(self.server_address)
         layout.addLayout(server)
 
+        explain_layout = QHBoxLayout()
+        explain_layout.addWidget(explain_answers_label)
+        explain_layout.addWidget(self.explain_answers)
+        layout.addLayout(explain_layout)
+
         layout.addWidget(reset_btn)
         layout.addWidget(close_btn)
 
@@ -182,6 +209,7 @@ class Settings(QDialog):
         
         self.export_type.currentTextChanged.connect(lambda value: self.save_config("General", "Export Format", value))
         self.server_address.textEdited.connect(lambda value: self.save_config("General", "Ollama Server", value))
+        self.explain_answers.stateChanged.connect(lambda value: self.save_config("General", "Explain Incorrect Answers", str(value)))
         self.open_config()
 
 # Class used to build GUI 
@@ -304,7 +332,7 @@ class GradingApp(QWidget):
         function_name = export_type.lower()
 
         self.output_box.append(f"\n {export_type} file exported.")
-        getattr(export, f"to_{function_name}")(names_list, grades, wrong_answers)
+        getattr(export, f"to_{function_name}")(names_list, grades, wrong_answers, explanations)
 
 
 
