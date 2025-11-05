@@ -47,6 +47,9 @@ This program should work with any Ollama supported GPU and operating system, but
  - Answers have to be boxed or highlighted for the LLM to find the answer correctly, otherwise it (probably) won't work
  - This program does need ollama to run, you can install it at https://ollama.com
 
+## To Do
+ - Add better batch grading for a whole class (eg. one key, multiple pages graded separately)
+ 
 ## Credits
  - Ollama
    - For the LLM backend

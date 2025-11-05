@@ -1,6 +1,9 @@
 # Script used to inference with LLM
 
 import ollama
+from configparser import ConfigParser
+from PyQt6.QtGui import QTextCursor
+import gui
 
 # Prompt to be used for the LLM
 prompt = """
@@ -24,6 +27,12 @@ Example output:
 
 # Model to be used for the LLM
 model = "qwen3-vl:8b"
+
+config = ConfigParser()
+config.read(gui.path)
+server_address = config.get("General", "Ollama Server")
+
+client = ollama.Client(host=server_address)
 
 def guirun(path, self):
     while True:

@@ -8,10 +8,12 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog,
     QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox, QDialog
 )
+from PyQt6.QtGui import QTextCursor
 from PyQt6.QtCore import QThread, pyqtSignal
 import inference
 import grade
 import export
+import explain
 
 # Configuration path
 path = "config.ini"
@@ -116,6 +118,9 @@ class Settings(QDialog):
         if not config.has_option("General", "Ollama Server"):
             config.set("General", "Ollama Server", "127.0.0.1:11434")
 
+        self.export_type.setCurrentText(config.get("General", "Export Format"))
+        self.server_address.setText(config.get("General", "Ollama Server"))
+
         # Write back to file
         with open(path, "w", encoding="utf-8") as f:
             config.write(f)
@@ -128,46 +133,62 @@ class Settings(QDialog):
         with open(path, "w", encoding="utf-8") as file:
             config.write(file)
 
-    # TO DO
-    # FINISH RESET CONFIG FUNCTION
     def reset_config(self):
         config = ConfigParser()
         config.read(path)
         config.set("General", "Export Format", "CSV")
-        #self.export_type.setCurrentText(config["General"][])
+        self.export_type.setCurrentText("CSV")
         config.set("General", "Ollama Server", "127.0.0.1:11434")
+        self.server_address.setText("127.0.0.1:11434")
+
+        with open(path, "w", encoding="utf-8") as file:
+            config.write(file)
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Settings")
         self.setFixedSize(500, 300)
 
-        # TO DO
-        # Add server options to layout
-        # Make layout options reflect config file
         layout = QVBoxLayout()
+
         self.export_type = QComboBox()
         self.export_type.addItems(export.types)
         export_label = QLabel("Export Format:")
+
+        self.server_address = QLineEdit()
+        server_address_label = QLabel("Ollama Server Address:")
+        self.server_address.setPlaceholderText("127.0.0.1:11434")
+
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
+
+        reset_btn = QPushButton("Reset Settings")
+        reset_btn.clicked.connect(self.reset_config)
 
         export_layout = QHBoxLayout()
         export_layout.addWidget(export_label)
         export_layout.addWidget(self.export_type)
         layout.addLayout(export_layout)
 
+        server = QHBoxLayout()
+        server.addWidget(server_address_label)
+        server.addWidget(self.server_address)
+        layout.addLayout(server)
+
+        layout.addWidget(reset_btn)
         layout.addWidget(close_btn)
 
         self.setLayout(layout)
         
         self.export_type.currentTextChanged.connect(lambda value: self.save_config("General", "Export Format", value))
+        self.server_address.textEdited.connect(lambda value: self.save_config("General", "Ollama Server", value))
         self.open_config()
 
 # Class used to build GUI 
 class GradingApp(QWidget):
     # When new text is added, scroll to the bottom automatically
     def append_and_scroll(self, text):
+        self.output_box.moveCursor(QTextCursor.MoveOperation.End)
         self.output_box.insertPlainText(text)
         self.output_box.verticalScrollBar().setValue(
             self.output_box.verticalScrollBar().maximum()
@@ -276,7 +297,10 @@ class GradingApp(QWidget):
             self.label.setText("Please select both homework and key pages before saving.")
 
     def export_grades(self):
-        export_type = self.settings.export_type.currentText()
+        config = ConfigParser()
+        config.read(path)
+        export_type = config.get("General", "Export Format")
+
         function_name = export_type.lower()
 
         self.output_box.append(f"\n {export_type} file exported.")
@@ -296,6 +320,7 @@ class GradingApp(QWidget):
 
     def start_grading(self):
         self.output_box.append("\nGrading...\n")
+        self.output_box.moveCursor(QTextCursor.MoveOperation.End)
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.show()
