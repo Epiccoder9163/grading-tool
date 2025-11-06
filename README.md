@@ -41,6 +41,11 @@ This program should work with any Ollama supported GPU and operating system, but
 4. Wait for your results
 5. Export to CSV or TXT format (more formats coming soon!)
 
+## Features
+ - Can grade handwritten assignments
+ - Can export to a file (CSV and TXT)
+ - Can explain incorrect answers
+ 
 ## Limitations
  - Can only take image files (.png or .jpeg), no PDFs or other documents
  - Can only accept multiple choice or simple numerical answers, no special math characters.
@@ -48,7 +53,7 @@ This program should work with any Ollama supported GPU and operating system, but
  - This program does need ollama to run, you can install it at https://ollama.com
 
 ## To Do
- - Add better batch grading for a whole class (eg. one key, multiple pages graded separately)
+ - Suggest new features in the Issues page!
  
 ## Credits
  - Ollama
