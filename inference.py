@@ -14,7 +14,7 @@ For each question, output the answer in the format:
 
 Rules:
 - Only extract what is written—do not verify correctness.
-- Prefer numerical answers; if none, use alphabetical answer or a full word (or words) if available.
+- Prefernumerical answers; if none, use a alphabetical answer or a full word (or words) if available.
 - If you get an alphabetical or word answer, then put it in all lowercase. Also, only give the letter or word, no parenthesis or other formatting.
 - Output only one answer per question, although that answer could be made up of multiple words.
 - Do not include explanations or extra formatting.
@@ -22,7 +22,7 @@ Rules:
 - Don't make new lines for each answer in your final response, put it all on one line.
 
 Example output:
-1: 42, 2: B, 3: 17
+1: 42, 2: b, 3: 17
 """
 
 # LLM to be used

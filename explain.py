@@ -11,39 +11,31 @@ model = "qwen3-vl:8b"
 
 # Prompt for LLM
 prompt = """
-Make sure not to overthink this prompt.
-You are an expert tutor helping a student learn from their mistakes. You will be provided with:
+You’re an expert tutor helping a student learn from their mistakes. You’ll get:
 
-1. The original assignment or question set  
-2. A list of the student’s incorrect answers  
-3. A list of the correct answers  
+The original assignment
+The student’s incorrect answers
+The correct answers
+For each question the student got wrong, give clear, helpful feedback in this format:
 
-Your task is to provide constructive, educational feedback for each incorrect response. For every question where the student answered incorrectly:
+Question [#]
 
-- Diagnose the mistake: Explain why the student’s answer is incorrect, including any misconceptions, miscalculations, or reasoning errors.
-- Teach the concept: Clarify the correct reasoning or solution in a way that builds understanding. Don’t just state the correct answer—explain it.
-- Coach for improvement: Offer specific, actionable advice to help the student improve. This could include practice strategies, conceptual reminders, or common pitfalls to watch out for.
-
-Format your response like this:
-
-1. **Question [#]**
-   - Feedback: [Explanation of mistake, clarification of concept, and improvement advice]
-
+Feedback: [Explain why the answer is wrong → clarify the correct concept → give one actionable tip to improve]
 Guidelines:
-
-- Keep your tone supportive, encouraging, and focused on growth.
-- Only include questions the student got wrong. Ignore other questions.
-- If a question or answer is missing, unclear, or appears to be a typo, say so.
-- If the error is too ambiguous to explain, acknowledge that and move on—don’t force an explanation.
-- If the student didn't provide any steps for you to work off of, say so.
+If you are given a numerical answer, do not get hung up over the multiple choice answers, use the numerical one.
+Be supportive and encouraging — focus on growth, not blame.
+Only respond to questions the student got wrong. Skip others.
+If something’s missing, unclear, or seems like a typo — say so.
+If the error is too vague to explain — say so, and move on.
+If the student didn’t show work or reasoning — say so.
 """
 
-def promptgen(wrong_answers):
-    output = f"{prompt} \n Wrong Answers: {wrong_answers}"
+def promptgen(wrong_answers, key_list):
+    output = f"{prompt} \n Wrong Answers: {wrong_answers} \n Correct Answers: {key_list}"
     
     return output
 
-def run(self, hw_path, wrong_answers):
+def run(self, hw_path, wrong_answers, key_list):
     # Initialize ollama client from configuration
     config = ConfigParser()
     config.read("config.ini")
@@ -56,7 +48,7 @@ def run(self, hw_path, wrong_answers):
     for i in range(len(wrong_answers)):
         final_response = ""
         print(wrong_answers)
-        currentprompt = promptgen(wrong_answers[i])
+        currentprompt = promptgen(wrong_answers[i], key_list)
         self.result.emit("\n")
         response = client.chat(
             model=model,

@@ -46,13 +46,14 @@ class GradingWorker(QThread):
         grades = []
         explanations = []
         wrong_answers = []
+        self.progress.emit(0)
         graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
-        print(explained_total)
         index = 0
         for name, files in self.paths.items():
             homework_list = []
             key_list = []
+            wrong_answers = []
 
             for hw_path in files['homework']:
                 # Inference with the LLM
@@ -69,9 +70,9 @@ class GradingWorker(QThread):
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
                 index += 1
-                if config.get("General", "Explain Incorrect Answers") == 2:
+                if int(config.get("General", "Explain Incorrect Answers")) == 2:
                     self.progress.emit(int((index / explained_total) * 100))
-                elif config.get("General", "Explain Incorrect Answers") == 0:
+                elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                     self.progress.emit(int((index / graded_total) * 100))
 
             self.result.emit("\n")
@@ -90,17 +91,16 @@ class GradingWorker(QThread):
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(key_path).name}: {parsed}")
                 index += 1
-                if config.get("General", "Explain Incorrect Answers") == 2:
+                if int(config.get("General", "Explain Incorrect Answers")) == 2:
                     self.progress.emit(int((index / explained_total) * 100))
-                elif config.get("General", "Explain Incorrect Answers") == 0:
+                elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                     self.progress.emit(int((index / graded_total) * 100))
             score = grade.run(homework_list, key_list)
             graded[name] = score[0]
             grades.append(score[0])
-            wrong_answers.append(score[1])
-            self.progress.emit(0)
+            wrong_answers = score[1]
             if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                explanations = (explain.run(self, files["homework"], wrong_answers))
+                explanations = (explain.run(self, files["homework"], wrong_answers, key_list))
                 index += 1
                 self.progress.emit(int((index / explained_total) * 100))
 
