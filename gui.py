@@ -32,7 +32,7 @@ class GradingWorker(QThread):
 
     def run(self):
         global grades
-        global wrong_answers
+        global wrong_answers_final
         global explanations
 
         config = ConfigParser()
@@ -45,7 +45,7 @@ class GradingWorker(QThread):
         graded = {}
         grades = []
         explanations = []
-        wrong_answers = []
+        wrong_answers_final = []
         self.progress.emit(0)
         graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
@@ -99,16 +99,17 @@ class GradingWorker(QThread):
             graded[name] = score[0]
             grades.append(score[0])
             wrong_answers = score[1]
+            wrong_answers_final.append(wrong_answers)
             if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                explanations = (explain.run(self, files["homework"], wrong_answers, key_list))
+                for i in range(0, len(files["homework"])):
+                    explanations = (explain.run(self, files["homework"][i], wrong_answers, key_list))
                 index += 1
                 self.progress.emit(int((index / explained_total) * 100))
-
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
         for i in range(0, len(grades)):
             self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
-            self.result.emit(f"\nWrong Answers: {wrong_answers[i]}")
+            self.result.emit(f"\nWrong Answers: {wrong_answers_final[i]}")
         # Enable and disable text boxes when the assignments are done grading
         self.export_btn_signal.emit(True)
         self.gui_state.emit(True)
@@ -340,7 +341,7 @@ class GradingApp(QWidget):
         function_name = export_type.lower()
 
         self.output_box.append(f"\n {export_type} file exported.")
-        getattr(export, f"to_{function_name}")(names_list, grades, wrong_answers, explanations)
+        getattr(export, f"to_{function_name}")(names_list, grades, wrong_answers_final, explanations)
 
 
 

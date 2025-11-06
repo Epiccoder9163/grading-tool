@@ -23,6 +23,7 @@ Question [#]
 Feedback: [Explain why the answer is wrong → clarify the correct concept → give one actionable tip to improve]
 Guidelines:
 If you are given a numerical answer, do not get hung up over the multiple choice answers, use the numerical one.
+Read all word answers as lowercase words, do not think letter case mismatches are actual errors, disregard case mismatches.
 Be supportive and encouraging — focus on growth, not blame.
 Only respond to questions the student got wrong. Skip others.
 If something’s missing, unclear, or seems like a typo — say so.
@@ -31,7 +32,10 @@ If the student didn’t show work or reasoning — say so.
 """
 
 def promptgen(wrong_answers, key_list):
-    output = f"{prompt} \n Wrong Answers: {wrong_answers} \n Correct Answers: {key_list}"
+    wrong_answers_lower = []
+    for i in range(len(wrong_answers)):
+        wrong_answers_lower.append(wrong_answers[i].lower())
+    output = f"{prompt} \n Wrong Answers: {wrong_answers_lower} \n Correct Answers: {key_list}"
     
     return output
 
@@ -42,45 +46,40 @@ def run(self, hw_path, wrong_answers, key_list):
     server_address = config.get("General", "Ollama Server")
     client = ollama.Client(host=server_address)
     output = []
-    i = 0
     
-
-    for i in range(len(wrong_answers)):
-        final_response = ""
-        print(wrong_answers)
-        currentprompt = promptgen(wrong_answers[i], key_list)
-        self.result.emit("\n")
-        response = client.chat(
-            model=model,
-            options={"temperature": 0},
-            stream=True,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Don't overthink your prompt, just answer it."
-                },
-                {
-                    "role": "user",
-                    "content": currentprompt,
-                    "images": [hw_path[i]],
-                }
-            ],
-            think=False
-        )
-        for chunk in response:
-            thinking = chunk.get("message", {}).get("thinking")
-            if thinking:
-                self.result.emit(thinking)
-            if chunk['message']['content'] == "":
-                nocontent = True
-            if chunk['message']['content'] != "" and nocontent == True:
-                nocontent = False
-                self.result.emit("\n")
-                self.result.emit("Response:")
-                self.result.emit("\n")
-            self.result.emit(chunk['message']['content'])
-            final_response += chunk['message']['content']
-        output.append(final_response)
-        i += 1
+    final_response = ""
+    currentprompt = promptgen(wrong_answers, key_list)
+    self.result.emit("\n")
+    response = client.chat(
+        model=model,
+        options={"temperature": 0},
+        stream=True,
+        messages=[
+            {
+                "role": "system",
+                "content": "Don't overthink your prompt, just answer it."
+            },
+            {
+                "role": "user",
+                "content": currentprompt,
+                "images": [hw_path],
+            }
+        ],
+        think=False
+    )
+    for chunk in response:
+        thinking = chunk.get("message", {}).get("thinking")
+        if thinking:
+            self.result.emit(thinking)
+        if chunk['message']['content'] == "":
+            nocontent = True
+        if chunk['message']['content'] != "" and nocontent == True:
+            nocontent = False
+            self.result.emit("\n")
+            self.result.emit("Response:")
+            self.result.emit("\n")
+        self.result.emit(chunk['message']['content'])
+        final_response += chunk['message']['content']
+    output.append(final_response)
         
     return output
