@@ -65,7 +65,7 @@ This program should work with any Ollama supported GPU and operating system, but
 
 ## To Do
 
-- Add better batch grading for a whole class (eg. one key, multiple pages graded separately)
+- Suggest new features in the issues tab!
 
 ## Credits
 
