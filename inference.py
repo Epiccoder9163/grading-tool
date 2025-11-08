@@ -27,7 +27,7 @@ Example output:
 
 # LLM to be used
 # This has to be a vision-enabled model
-model = "qwen3-vl:8b"
+model = "hf.co/ElliottWise/qwen3-vl-math:Q4_K_M"
 
 
 
