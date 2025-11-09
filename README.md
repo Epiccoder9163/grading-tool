@@ -4,15 +4,23 @@ A LLM-based grading tool to help teachers grade assignments
 
 ### This tool is a work in progress and should NOT be used in a production environment where the accuracy of the result is vital.
 
-This program has only been tested on Zorin OS 18 (Ubuntu 24.04 LTS) with an AMD RX 9060 XT, but is also confirmed working with an NVIDIA GPU under CachyOS (Arch Linux).
+This program has only been tested on Zorin OS 18 (Ubuntu 24.04 LTS) with an AMD RX 9060 XT (16gb), but is also confirmed working with an NVIDIA RTX 4080 under CachyOS (Arch Linux).
 
 This program should work with any Ollama supported GPU and operating system, but your mileage may vary.
 
-Vision-enabled LLM Used - Qwen3-vl-math
-https://huggingface.co/ElliottWise/qwen3-vl-math
+Vision-Enabled LLM Used - [Qwen3-VL-Math](https://huggingface.co/ElliottWise/qwen3-vl-math)
+
 
 ## How to install
+1. **Install and confirm Ollama is running**
+	
+	- [Download Ollama](https://ollama.com/download)
+	
+	 - Confirm Ollama is running
 
+ 		```bash
+		ollama status
+		```
 1. **Clone the repository**
 
    ```bash
@@ -32,7 +40,7 @@ https://huggingface.co/ElliottWise/qwen3-vl-math
    ```
 	**Windows**
 
- 	```bash
+ 	```powershell
    venv/bin/activate
    ```
 4. **Install dependencies**
