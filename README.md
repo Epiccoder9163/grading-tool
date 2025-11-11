@@ -18,9 +18,9 @@ Vision-Enabled LLM Used - [Qwen3-VL-Math](https://huggingface.co/ElliottWise/qwe
 	
 	 Confirm Ollama is running
 
- 		```bash
-		ollama status
-		```
+ 	```bash
+	ollama status
+	```
 1. **Clone the repository**
 
    ```bash
