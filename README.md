@@ -14,9 +14,9 @@ Vision-Enabled LLM Used - [Qwen3-VL-Math](https://huggingface.co/ElliottWise/qwe
 ## How to install
 1. **Install and confirm Ollama is running**
 	
-	- [Download Ollama](https://ollama.com/download)
+	[Download Ollama](https://ollama.com/download)
 	
-	 - Confirm Ollama is running
+	 Confirm Ollama is running
 
  		```bash
 		ollama status
