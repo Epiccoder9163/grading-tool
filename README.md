@@ -8,7 +8,7 @@ This program has only been tested on Zorin OS 18 (Ubuntu 24.04 LTS) with an AMD 
 
 This program should work with any Ollama supported GPU and operating system, but your mileage may vary.
 
-Vision-Enabled LLM Used - [Qwen3-VL-Math](https://huggingface.co/ElliottWise/qwen3-vl-math)
+Vision-Enabled LLM Used - [Qwen3-VL:8B](https://ollama.com/library/qwen3-vl)
 
 
 ## How to install
