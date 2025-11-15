@@ -49,14 +49,13 @@ class GradingWorker(QThread):
         wrong_answers_final = []
         self.progress.emit(0)
         graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
-        explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
+        explained_total = len(self.paths.items()) + graded_total
         index = 0
         for name, files in self.paths.items():
             homework_list = []
             key_list = []
             wrong_answers = []
             question_count = []
-            last_question = 0
 
             for hw_path in files['homework']:
                 # Inference with the LLM
@@ -106,6 +105,8 @@ class GradingWorker(QThread):
             wrong_answers_final.append(wrong_answers)
             if int(config.get("General", "Explain Incorrect Answers")) == 2:
                 explanations = (explain.run(self, files["homework"], wrong_answers, key_list))
+                index += 1
+                self.progress.emit(int((index / explained_total) * 100))
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
         for i in range(0, len(grades)):
