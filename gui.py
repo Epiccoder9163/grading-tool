@@ -19,6 +19,7 @@ import explain
 path = "config.ini"
 
 # Worker class for grading assignments via gui
+# Coordinates explanation, grading, and inferencing.
 class GradingWorker(QThread):
     gui_state = pyqtSignal(bool)
     export_btn_signal = pyqtSignal(bool)
@@ -54,6 +55,8 @@ class GradingWorker(QThread):
             homework_list = []
             key_list = []
             wrong_answers = []
+            question_count = []
+            last_question = 0
 
             for hw_path in files['homework']:
                 # Inference with the LLM
@@ -62,6 +65,7 @@ class GradingWorker(QThread):
                 while True:
                     try:
                         parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                        question_count.append(len(parsed))
                         break
                     except IndexError:
                         self.result.emit("Rerunning Prompt!")
@@ -101,10 +105,7 @@ class GradingWorker(QThread):
             wrong_answers = score[1]
             wrong_answers_final.append(wrong_answers)
             if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                for i in range(0, len(files["homework"])):
-                    explanations = (explain.run(self, files["homework"][i], wrong_answers, key_list))
-                index += 1
-                self.progress.emit(int((index / explained_total) * 100))
+                explanations = (explain.run(self, files["homework"], wrong_answers, key_list))
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
         for i in range(0, len(grades)):
@@ -115,6 +116,8 @@ class GradingWorker(QThread):
         self.gui_state.emit(True)
 
 # Class used to build settings menu
+# Stores, saves, and loads settings file from 'config.ini'
+# Change this path at the top of the script
 class Settings(QDialog):
     def open_config(self):
         global config
@@ -219,7 +222,9 @@ class Settings(QDialog):
         self.explain_answers.stateChanged.connect(lambda value: self.save_config("General", "Explain Incorrect Answers", str(value)))
         self.open_config()
 
-# Class used to build GUI 
+# Class used to build GUI
+# Has events for button presses, etc
+# Coordinates with the gradingworker class
 class GradingApp(QWidget):
     # When new text is added, scroll to the bottom automatically
     def append_and_scroll(self, text):

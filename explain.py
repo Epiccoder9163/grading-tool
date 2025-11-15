@@ -39,7 +39,7 @@ def promptgen(wrong_answers, key_list):
     
     return output
 
-def run(self, hw_path, wrong_answers, key_list):
+def run(self, hw_paths, wrong_answers, key_list):
     # Initialize ollama client from configuration
     config = ConfigParser()
     config.read("config.ini")
@@ -62,7 +62,7 @@ def run(self, hw_path, wrong_answers, key_list):
             {
                 "role": "user",
                 "content": currentprompt,
-                "images": [hw_path],
+                "images": hw_paths,
             }
         ],
         think=False

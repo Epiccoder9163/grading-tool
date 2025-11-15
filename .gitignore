@@ -1,12 +1,8 @@
-
 .vscode/settings.json
-__pycache__/libinput.cpython-310.pyc
 /__pycache__
-/venv
 tempCodeRunnerFile.python
 /.venv
-/build/gui
+/build
 /dist
 grades.csv
 grades.txt
-config.ini

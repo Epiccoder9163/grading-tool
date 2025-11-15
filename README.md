@@ -56,7 +56,7 @@ Vision-Enabled LLM Used - [Qwen3-VL:8B](https://ollama.com/library/qwen3-vl)
 
    **Or run the TTY version (Depreciated)**
    ```bash
-   python3 ./main.py
+   python3 ./Legacy/main.py
    ```
 
 ## Usage
