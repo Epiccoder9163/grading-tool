@@ -49,13 +49,15 @@ class GradingWorker(QThread):
         wrong_answers_final = []
         self.progress.emit(0)
         graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
-        explained_total = len(self.paths.items()) + graded_total
+        explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
         index = 0
         for name, files in self.paths.items():
             homework_list = []
             key_list = []
             wrong_answers = []
             question_count = []
+            key_answers = []
+            student_answers = []
 
             for hw_path in files['homework']:
                 # Inference with the LLM
@@ -70,6 +72,7 @@ class GradingWorker(QThread):
                         self.result.emit("Rerunning Prompt!")
                         output = inference.guirun(hw_path, self)
                 homework_list.extend(parsed)
+                student_answers.append(parsed)
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
                 index += 1
@@ -90,6 +93,7 @@ class GradingWorker(QThread):
                     except IndexError:
                         self.result.emit("Rerunning Prompt!")
                         output = inference.guirun(key_path, self)
+                key_answers.append(parsed)
                 key_list.extend(parsed)
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(key_path).name}: {parsed}")
@@ -104,14 +108,15 @@ class GradingWorker(QThread):
             wrong_answers = score[1]
             wrong_answers_final.append(wrong_answers)
             if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                explanations = (explain.run(self, files["homework"], wrong_answers, key_list))
-                index += 1
-                self.progress.emit(int((index / explained_total) * 100))
+                explanations_output = (explain.run(self, files["homework"], wrong_answers, student_answers, key_answers, explained_total, index))
+                explanations = explanations_output[0]
+                index = explanations_output[1]
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
         for i in range(0, len(grades)):
             self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
             self.result.emit(f"\nWrong Answers: {wrong_answers_final[i]}")
+            self.result.emit(f"\nExplanations: {explanations[i]}")
         # Enable and disable text boxes when the assignments are done grading
         self.export_btn_signal.emit(True)
         self.gui_state.emit(True)
