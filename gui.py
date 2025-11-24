@@ -14,6 +14,7 @@ import inference
 import grade
 import export
 import explain
+import ollama
 
 # Configuration path
 path = "config.ini"
@@ -47,10 +48,30 @@ class GradingWorker(QThread):
         grades = []
         explanations = []
         wrong_answers_final = []
+        try:
+            models = ollama.list()
+            model_found = any(m["name"] == inference.model for m in models["models"])
+            if not model_found:
+                raise ValueError("Model not found")
+        except Exception as e:
+            self.result.emit(f"\nModel {inference.model} not found!")
+            self.result.emit("\nDownloading Now . . .")
+            self.progress.emit(0)
+            for event in ollama.pull(inference.model, stream=True):
+                if 'completed' in event and 'total' in event:
+                    completed = event['completed']
+                    total = event['total']
+                    if total > 0:
+                        percent = (completed / total) * 100
+                        self.progress.emit(int(percent))
+                elif 'status' in event:
+                    self.result.emit(f"\n{event['status']}")
+
         self.progress.emit(0)
         graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
         explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
         index = 0
+            
         for name, files in self.paths.items():
             homework_list = []
             key_list = []
