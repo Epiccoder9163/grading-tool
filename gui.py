@@ -4,6 +4,7 @@ import sys
 import os
 from configparser import ConfigParser
 from pathlib import Path
+from typing import List, Dict
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog,
     QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox, QDialog, QCheckBox
@@ -39,6 +40,7 @@ class GradingWorker(QThread):
 
         config = ConfigParser()
         config.read(path)
+        model = config.get("General", "Model")
 
         # Change UI state, disable button
         self.gui_state.emit(False)
@@ -48,24 +50,42 @@ class GradingWorker(QThread):
         grades = []
         explanations = []
         wrong_answers_final = []
+
+        # 1️⃣ Check availability by asking Ollama for model details
+        # If ollama.show(model) fails, the model does not exist.
+        model_exists = False
         try:
-            models = ollama.list()
-            model_found = any(m["name"] == inference.model for m in models["models"])
-            if not model_found:
-                raise ValueError("Model not found")
-        except Exception as e:
-            self.result.emit(f"\nModel {inference.model} not found!")
+            ollama.show(model)
+            model_exists = True
+        except Exception:
+            # Any error here (usually a 404) means we need to download
+            model_exists = False
+
+        # 2️⃣ Logic flow
+        if model_exists:
+            self.result.emit(f"\nModel '{model}' found locally.")
+        else:
+            self.result.emit(f"\nModel '{model}' not found locally.")
             self.result.emit("\nDownloading Now . . .")
             self.progress.emit(0)
-            for event in ollama.pull(inference.model, stream=True):
-                if 'completed' in event and 'total' in event:
-                    completed = event['completed']
-                    total = event['total']
-                    if total > 0:
-                        percent = (completed / total) * 100
-                        self.progress.emit(int(percent))
-                elif 'status' in event:
-                    self.result.emit(f"\n{event['status']}")
+
+            try:
+                # Pull the model, streaming progress
+                for event in ollama.pull(model, stream=True):
+                    if 'completed' in event and 'total' in event:
+                        completed = event['completed']
+                        total = event['total']
+                        if total > 0:
+                            percent = (completed / total) * 100
+                            self.progress.emit(int(percent))
+                        elif 'status' in event:
+                            self.result.emit(f"\n{event['status']}")
+            except Exception as exc:
+                self.result.emit(f"\nError during download: {exc}")
+
+        # 3️⃣ Final Ready Signal
+        self.result.emit("\nModel ready.")
+
 
         self.progress.emit(0)
         graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
@@ -167,9 +187,12 @@ class Settings(QDialog):
             config.set("General", "Ollama Server", "127.0.0.1:11434")
         if not config.has_option("General", "Explain Incorrect Answers"):
             config.set("General", "Explain Incorrect Answers", "0")
+        if not config.has_option("General", "Model"):
+            config.set("General", "Model", "qwen3-vl:8b")
 
         self.export_type.setCurrentText(config.get("General", "Export Format"))
         self.server_address.setText(config.get("General", "Ollama Server"))
+        self.vision_model.setText(config.get("General", "Model"))
         if int(config.get("General", "Explain Incorrect Answers")) == 2:
             self.explain_answers.setChecked(True)
         elif int(config.get("General", "Explain Incorrect Answers")) == 0:
@@ -196,6 +219,8 @@ class Settings(QDialog):
         self.server_address.setText("127.0.0.1:11434")
         config.set("General", "Explain Incorrect Answers", "False")
         self.explain_answers.setChecked(False)
+        config.set("General", "Model", "qwen3-vl:8b")
+        self.vision_model.setText("qwen3-vl:8b")
 
         with open(path, "w", encoding="utf-8") as file:
             config.write(file)
@@ -214,6 +239,10 @@ class Settings(QDialog):
         self.server_address = QLineEdit()
         server_address_label = QLabel("Ollama Server Address:")
         self.server_address.setPlaceholderText("127.0.0.1:11434")
+
+        self.vision_model = QLineEdit()
+        vision_model_label = QLabel("Vision Model Used:")
+        self.vision_model.setPlaceholderText("qwen3-vl:8b")
 
         self.explain_answers = QCheckBox()
         explain_answers_label = QLabel("Explain Incorrect Answers")
@@ -234,6 +263,11 @@ class Settings(QDialog):
         server.addWidget(self.server_address)
         layout.addLayout(server)
 
+        model = QHBoxLayout()
+        model.addWidget(vision_model_label)
+        model.addWidget(self.vision_model)
+        layout.addLayout(model)
+
         explain_layout = QHBoxLayout()
         explain_layout.addWidget(explain_answers_label)
         explain_layout.addWidget(self.explain_answers)
@@ -246,6 +280,7 @@ class Settings(QDialog):
         
         self.export_type.currentTextChanged.connect(lambda value: self.save_config("General", "Export Format", value))
         self.server_address.textEdited.connect(lambda value: self.save_config("General", "Ollama Server", value))
+        self.vision_model.textEdited.connect(lambda value: self.save_config("General", "Model", str(value)))
         self.explain_answers.stateChanged.connect(lambda value: self.save_config("General", "Explain Incorrect Answers", str(value)))
         self.open_config()
 

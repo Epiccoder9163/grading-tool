@@ -1,0 +1,1 @@
+self.server_address.setText(config.get("General", "Ollama Server"))

@@ -5,10 +5,6 @@ import ollama
 import gui
 from configparser import ConfigParser
 
-# LLM to be used
-# This has to be a vision-enabled model
-model = "qwen3-vl:8b"
-
 # Prompt for LLM
 prompt = """
 You’re an expert tutor helping a student learn from their mistakes. You’ll get:
@@ -44,6 +40,7 @@ def run(self, hw_paths, wrong_answers, student_answers, key_answers, progress_to
     config = ConfigParser()
     config.read("config.ini")
     server_address = config.get("General", "Ollama Server")
+    model = config.get("General", "Model")
     client = ollama.Client(host=server_address)
     output = []
 

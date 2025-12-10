@@ -25,9 +25,6 @@ Example output:
 1: 42, 2: b, 3: 17
 """
 
-# LLM to be used
-# This has to be a vision-enabled model
-model = "qwen3-vl:8b"
 
 
 
@@ -35,6 +32,7 @@ def guirun(path, self):
     # Initialize ollama client from configuration
     config = ConfigParser()
     config.read("config.ini")
+    model = config.get("General", "Model")
     server_address = config.get("General", "Ollama Server")
 
     client = ollama.Client(host=server_address)
