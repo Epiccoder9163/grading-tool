@@ -51,20 +51,16 @@ class GradingWorker(QThread):
         explanations = []
         wrong_answers_final = []
 
-        # 1️⃣ Check availability by asking Ollama for model details
         # If ollama.show(model) fails, the model does not exist.
         model_exists = False
         try:
             ollama.show(model)
             model_exists = True
         except Exception:
-            # Any error here (usually a 404) means we need to download
+            # Any error here (usually a 404) means download
             model_exists = False
-
-        # 2️⃣ Logic flow
-        if model_exists:
-            continue
-        else:
+          
+        if not model_exists:
             self.result.emit(f"\nModel '{model}' not found locally.")
             self.result.emit("\nDownloading Now . . .")
             self.progress.emit(0)
