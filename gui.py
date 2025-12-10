@@ -63,7 +63,7 @@ class GradingWorker(QThread):
 
         # 2️⃣ Logic flow
         if model_exists:
-            self.result.emit(f"\nModel '{model}' found locally.")
+            continue
         else:
             self.result.emit(f"\nModel '{model}' not found locally.")
             self.result.emit("\nDownloading Now . . .")
@@ -82,10 +82,6 @@ class GradingWorker(QThread):
                             self.result.emit(f"\n{event['status']}")
             except Exception as exc:
                 self.result.emit(f"\nError during download: {exc}")
-
-        # 3️⃣ Final Ready Signal
-        self.result.emit("\nModel ready.")
-
 
         self.progress.emit(0)
         graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
@@ -157,7 +153,8 @@ class GradingWorker(QThread):
         for i in range(0, len(grades)):
             self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
             self.result.emit(f"\nWrong Answers: {wrong_answers_final[i]}")
-            self.result.emit(f"\nExplanations: {explanations[i]}")
+            if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                self.result.emit(f"\nExplanations: {explanations[i]}")
         # Enable and disable text boxes when the assignments are done grading
         self.export_btn_signal.emit(True)
         self.gui_state.emit(True)
