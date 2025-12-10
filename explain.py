@@ -73,19 +73,26 @@ def run(self, hw_paths, wrong_answers, student_answers, key_answers, progress_to
             ],
             think=False
         )
+        in_thinking = False
+
         for chunk in response:
-            thinking = chunk.get("message", {}).get("thinking")
-            if thinking:
-                self.result.emit(thinking)
-            if chunk['message']['content'] == "":
-                nocontent = True
-            if chunk['message']['content'] != "" and nocontent == True:
-                nocontent = False
+            if chunk.message.thinking and not in_thinking:
+                in_thinking = True
                 self.result.emit("\n")
-                self.result.emit("Response:")
+                self.result.emit("Thinking:")
                 self.result.emit("\n")
-            self.result.emit(chunk['message']['content'])
-            final_response += chunk['message']['content']
+
+            if chunk.message.thinking:
+                self.result.emit(chunk.message.thinking)
+            elif chunk.message.content:
+                if in_thinking:
+                    self.result.emit("\n")
+                    self.result.emit("Response:")
+                    self.result.emit("\n")
+                    in_thinking = False
+                self.result.emit(chunk.message.content)
+                final_response += chunk.message.content
+                
         output.append(final_response)
         progress_index += 1
         self.progress.emit(int((progress_index / progress_total) * 100))
