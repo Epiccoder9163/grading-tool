@@ -241,6 +241,7 @@ class Settings(QDialog):
         self.server_address.setPlaceholderText("127.0.0.1:11434")
 
         self.vision_model = QLineEdit()
+        self.vision_model.setToolTip("Some models will work better than others, a vision model is required")
         vision_model_label = QLabel("Vision Model Used:")
         self.vision_model.setPlaceholderText("qwen3-vl:8b")
 
@@ -256,16 +257,19 @@ class Settings(QDialog):
         export_layout = QHBoxLayout()
         export_layout.addWidget(export_label)
         export_layout.addWidget(self.export_type)
+        export_layout.addStretch()
         layout.addLayout(export_layout)
 
         server = QHBoxLayout()
         server.addWidget(server_address_label)
         server.addWidget(self.server_address)
+        server.addStretch()
         layout.addLayout(server)
 
         model = QHBoxLayout()
         model.addWidget(vision_model_label)
         model.addWidget(self.vision_model)
+        model.addStretch()
         layout.addLayout(model)
 
         explain_layout = QHBoxLayout()

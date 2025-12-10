@@ -61,6 +61,25 @@ def guirun(path, self):
                 ],
                 think=False
             )
+            in_thinking = False
+
+            for chunk in response:
+                if chunk.message.thinking and not in_thinking:
+                    in_thinking = True
+                    self.result.emit("\n")
+                    self.result.emit("Thinking:")
+                    self.result.emit("\n")
+
+                if chunk.message.thinking:
+                    self.result.emit(chunk.message.thinking)
+                elif chunk.message.content:
+                    if in_thinking:
+                        self.result.emit("\n")
+                        self.result.emit("Response:")
+                        self.result.emit("\n")
+                        in_thinking = False
+                    self.result.emit(chunk.message.content)
+
             for chunk in response:
                 thinking = chunk.get("message", {}).get("thinking")
                 if thinking:
