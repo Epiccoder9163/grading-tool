@@ -79,21 +79,7 @@ def guirun(path, self):
                         self.result.emit("\n")
                         in_thinking = False
                     self.result.emit(chunk.message.content)
-
-            for chunk in response:
-                thinking = chunk.get("message", {}).get("thinking")
-                if thinking:
-                    self.result.emit(thinking)
-                if chunk['message']['content'] == "":
-                    nocontent = True
-                if chunk['message']['content'] != "" and nocontent == True:
-                    nocontent = False
-                    self.result.emit("\n")
-                    self.result.emit("Response:")
-                    self.result.emit("\n")
-                self.result.emit(chunk['message']['content'])
-                final_response += chunk['message']['content']
-
+                    final_response += chunk.message.content
 
             # Save final response
             output.append(final_response)
