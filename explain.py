@@ -44,18 +44,26 @@ def run(self, hw_paths, wrong_answers, student_answers, key_answers, progress_to
     client = ollama.Client(host=server_address)
     output = []
 
-    for i in range(len(hw_paths)):
+    # Debugging messages
+    print(hw_paths)
+    print(wrong_answers)
+    print(student_answers)
+    print(key_answers)
+
+    for i in range(0, len(hw_paths)):
         final_response = ""
-        wrong_answers_active = []
-        for x in range(len(student_answers[i])):
-            try:
-                if wrong_answers[x] == student_answers[i][x]:
-                    wrong_answers_active.append(wrong_answers[x])
-            except IndexError:
-                break
+        # Parse the wrong answers input list and pick only incorrect answers that appear in the currently prompted page
+        wrong_answers_parsed = [item.split(":")[1].strip() for item in wrong_answers[i]]
+        print(wrong_answers_parsed)
+        wrong_answers_active = [item for item in wrong_answers_parsed if item in student_answers[i]]
         currentprompt = promptgen(wrong_answers_active, key_answers[i])
+        print(wrong_answers_active)
+        print(currentprompt)
         self.result.emit("\n")
+        
+        # Debugging messages
         print(hw_paths[i])
+
         response = client.chat(
             model=model,
             options={"temperature": 0},
@@ -68,7 +76,7 @@ def run(self, hw_paths, wrong_answers, student_answers, key_answers, progress_to
                 {
                     "role": "user",
                     "content": currentprompt,
-                    "images": hw_paths[i]
+                    "images": [hw_paths[i]]
                 }
             ],
             think=False

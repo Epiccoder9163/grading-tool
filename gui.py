@@ -20,6 +20,7 @@ import ollama
 # Configuration path
 path = "config.ini"
 
+
 # Worker class for grading assignments via gui
 # Coordinates explanation, grading, and inferencing.
 class GradingWorker(QThread):
@@ -34,6 +35,7 @@ class GradingWorker(QThread):
         self.paths = paths
 
     def run(self):
+        #explain.run(self, ['/home/ewise/Documents/GitHub/grading-tool/testingimages/sanity_check/homework.png'], ['2: 6'], [['1', '6', '10']], [['1', '7', '10']], 0, 0)
         global grades
         global wrong_answers_final
         global explanations
@@ -140,10 +142,16 @@ class GradingWorker(QThread):
             grades.append(score[0])
             wrong_answers = score[1]
             wrong_answers_final.append(wrong_answers)
-            if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                explanations_output = (explain.run(self, files["homework"], wrong_answers, student_answers, key_answers, explained_total, index))
-                explanations = explanations_output[0]
-                index = explanations_output[1]
+            # Run the explain run function to explain incorrect answers if enabled in the config file
+
+            # Check if the student didn't get a 100, if so there are no incorrect answers to explain
+            if score[0] != 100:
+                if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                    explanations_output = (explain.run(self, files["homework"], wrong_answers, student_answers, key_answers, explained_total, index))
+                    explanations = explanations_output[0]
+                    index = explanations_output[1]
+            else:
+                self.result.emit("Student got a 100, so no incorrect answers to explain. \n Skipping task")
         self.finished.emit("All assignments graded.")
         # Add all grades in output box when finished
         for i in range(0, len(grades)):
@@ -285,6 +293,7 @@ class Settings(QDialog):
 # Has events for button presses, etc
 # Coordinates with the gradingworker class
 class GradingApp(QWidget):
+    
     # When new text is added, scroll to the bottom automatically
     def append_and_scroll(self, text):
         self.output_box.moveCursor(QTextCursor.MoveOperation.End)
@@ -443,6 +452,7 @@ class GradingApp(QWidget):
 
 if __name__ == "__main__":
     # Initialize program
+    
     app = QApplication(sys.argv)
     window = GradingApp()
     window.show()

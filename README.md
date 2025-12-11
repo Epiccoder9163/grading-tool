@@ -4,7 +4,7 @@ A LLM-based grading tool to help teachers grade assignments
 
 ### This tool is a work in progress and should NOT be used in a production environment where the accuracy of the result is vital.
 
-This program has only been tested on Zorin OS 18 (Ubuntu 24.04 LTS) with an AMD RX 9060 XT (16gb), but is also confirmed working with an NVIDIA RTX 4080 under CachyOS (Arch Linux).
+This program has only been tested on Zorin OS 18 (Ubuntu 24.04 LTS) as well as Fedora 43 with an AMD RX 9060 XT (16gb), but is also confirmed working with an NVIDIA RTX 4080 under CachyOS (Arch Linux).
 
 This program should work with any Ollama supported GPU and operating system, but your mileage may vary.
 

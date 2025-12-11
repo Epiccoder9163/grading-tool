@@ -1,1 +1,1 @@
-self.server_address.setText(config.get("General", "Ollama Server"))
+[item.split(":")[1].strip() for item in output.split(",")]
