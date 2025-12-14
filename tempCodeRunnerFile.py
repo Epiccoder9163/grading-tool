@@ -1,1 +1,0 @@
-[item.split(":")[1].strip() for item in output.split(",")]

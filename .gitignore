@@ -1,6 +1,7 @@
 .vscode/settings.json
 /__pycache__
 tempCodeRunnerFile.python
+tempCodeRunnerFile.py
 /.venv
 /build
 /dist
