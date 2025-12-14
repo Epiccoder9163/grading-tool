@@ -88,3 +88,5 @@ Vision-Enabled LLM Used - [Qwen3-VL:8B](https://ollama.com/library/qwen3-vl)
   - For the LLM backend
 - Alibaba Cloud
   - For the Qwen3-VL model used for text extraction
+
+ [![Star History Chart](https://api.star-history.com/svg?repos=Epiccoder9163/grading-tool&type=date&legend=top-left)](https://www.star-history.com/#Epiccoder9163/grading-tool&type=date&legend=top-left)
