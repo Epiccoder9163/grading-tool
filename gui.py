@@ -35,7 +35,6 @@ class GradingWorker(QThread):
         self.paths = paths
 
     def run(self):
-        #explain.run(self, ['/home/ewise/Documents/GitHub/grading-tool/testingimages/sanity_check/homework.png'], ['2: 6'], [['1', '6', '10']], [['1', '7', '10']], 0, 0)
         global grades
         global wrong_answers_final
         global explanations
@@ -452,7 +451,9 @@ class GradingApp(QWidget):
 
 if __name__ == "__main__":
     # Initialize program
-    
+
+    print("Debugging messages and errors will be shown here")
+
     app = QApplication(sys.argv)
     window = GradingApp()
     window.show()

@@ -53,7 +53,7 @@ def run(self, hw_paths, wrong_answers, student_answers, key_answers, progress_to
     for i in range(0, len(hw_paths)):
         final_response = ""
         # Parse the wrong answers input list and pick only incorrect answers that appear in the currently prompted page
-        wrong_answers_parsed = [item.split(":")[1].strip() for item in wrong_answers[i]]
+        wrong_answers_parsed = ([item.split(":")[1].strip() for item in wrong_answers[i]])
         print(wrong_answers_parsed)
         wrong_answers_active = [item for item in wrong_answers_parsed if item in student_answers[i]]
         currentprompt = promptgen(wrong_answers_active, key_answers[i])
