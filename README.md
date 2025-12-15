@@ -77,7 +77,8 @@ Vision-Enabled LLM Used - [Qwen3-VL:8B](https://ollama.com/library/qwen3-vl)
 - Can only take image files (.png or .jpeg), no PDFs or other documents
 - Can only accept multiple choice or simple numerical answers, no special math characters.
 - Answers have to be boxed or highlighted for the LLM to find the answer correctly, otherwise it (probably) won't work
-- This program does need ollama to run, you can install it at https://ollama.com
+- This program needs ollama to run, you can install it at https://ollama.com
+- May have limitations grading (particularly explaining) longer and more complex single-page assignments due to the simple grading pipeline
 
 ## To Do
 - Suggest new features in the issues tab!

@@ -10,7 +10,6 @@ prompt = """
 You’re an expert tutor helping a student learn from their mistakes. You’ll get:
 
 The original assignment
-The correct answers
 For each question the student got wrong, give clear, helpful feedback in this format:
 
 Question [#]
@@ -27,12 +26,7 @@ If the student didn’t show work or reasoning — say so.
 Some answers should be correct. If there are some, you don't have to note it, just pass by them. Only comment on incorrect answers.
 """
 
-def promptgen(answers):
-    output = f"{prompt} \n Correct Answers: {answers}"
-    
-    return output
-
-def run(self, hw_paths, student_answers, key_answers, progress_total, progress_index):
+def run(self, hw_paths, key_paths, progress_total, progress_index):
     # Initialize ollama client from configuration
     config = ConfigParser()
     config.read("config.ini")
@@ -43,13 +37,10 @@ def run(self, hw_paths, student_answers, key_answers, progress_total, progress_i
 
     # Debugging messages
     print(hw_paths)
-    print(student_answers)
-    print(key_answers)
+    print(key_paths)
 
     for i in range(0, len(hw_paths)):
         final_response = ""
-        currentprompt = promptgen(key_answers[i])
-        print(currentprompt)
         self.result.emit("\n")
         
         # Debugging messages
@@ -66,7 +57,7 @@ def run(self, hw_paths, student_answers, key_answers, progress_total, progress_i
                 },
                 {
                     "role": "user",
-                    "content": currentprompt,
+                    "content": prompt,
                     "images": [hw_paths[i]]
                 }
             ],

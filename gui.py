@@ -146,7 +146,7 @@ class GradingWorker(QThread):
             # Check if the student didn't get a 100, if so there are no incorrect answers to explain
             if score[0] != 100:
                 if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                    explanations_output = (explain.run(self, files["homework"], student_answers, key_answers, explained_total, index))
+                    explanations_output = (explain.run(self, files["homework"], files["keys"], explained_total, index))
                     explanations = explanations_output[0]
                     index = explanations_output[1]
             else:
