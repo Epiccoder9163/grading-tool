@@ -81,7 +81,7 @@ Vision-Enabled LLM Used - [Qwen3-VL:8B](https://ollama.com/library/qwen3-vl)
 - May have limitations grading (particularly explaining) longer and more complex single-page assignments due to the simple grading pipeline
 
 ## To Do
-- Suggest new features in the issues tab!
+- Suggest new features and report bugs in the issues tab!
  
 ## Credits
 
