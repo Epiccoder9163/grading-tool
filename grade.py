@@ -16,6 +16,8 @@ Only grade questions that appear in both the student’s work and the answer key
 After grading, calculate the percentage score using the number of correct answers divided by the total number of questions, 
 multiplied by 100. Round to the nearest whole number.
 
+Don't overthink this task, just calculate an average grade and find the questions the student got wrong.
+
 Your final output must follow this exact format: (percentage score), 
 list of wrong answers
 
@@ -40,7 +42,7 @@ def run_basic(homework_list, key_list):
             wrong_answers.append(f"{i + 1}: {homework_list[i]}")
     return [avg(len(homework_list), numright), wrong_answers]
 
-def run_full(hw_path, key_path):
+def run_full(self, hw_path, key_path):
     # Initialize ollama client from configuration
     config = ConfigParser()
     config.read("config.ini")
@@ -63,7 +65,7 @@ def run_full(hw_path, key_path):
                 messages=[
                     {
                         "role": "system",
-                        "content": "Don't overthink your prompt, just answer it simply and consisely. You are an AI OCR tool designed to take homework assignments and produce a list of answers and their corresponding question numbers."
+                        "content": "Don't overthink your prompt, just answer it simply, consisely, and accurately."
                     },
                     {
                         "role": "user",

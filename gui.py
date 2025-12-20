@@ -108,11 +108,18 @@ class GradingWorker(QThread):
                         # If the AI requests further review for the assignment being graded, it skips the key OCR and
                         # goes through full LLM grading, not just OCR.
                         # Then remove the item from the list, to not collide with further calculations.
-                        if parsed[-1] == "true":
+                        if config.get("General", "Full LLM") == "Always":
+                            self.result.emit("Further review required!")
+                            review = True
+                            if parsed[-1] == "true":
+                                parsed.remove("true")
+                            elif parsed[-1] == "false":
+                                parsed.remove("false")
+                        elif parsed[-1] == "true" and config.get("General", "Full LLM") == "When Needed":
                             self.result.emit("Further review requested!")
                             review = True
                             parsed.remove("true")
-                        elif parsed[-1] == "false":
+                        elif parsed[-1] == "false" or config.get("General", "Full LLM") == "Never":
                             self.result.emit("Further review not required.")
                             review = False
                             parsed.remove("false")
@@ -139,6 +146,9 @@ class GradingWorker(QThread):
                     self.progress.emit(int((index / explained_total) * 100))
                 elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                     self.progress.emit(int((index / graded_total) * 100))
+                # If review is true, skip ocr for the other hw pages
+                if review == True:
+                    break
 
             self.result.emit("\n")
             if review == False:
@@ -196,22 +206,35 @@ class GradingWorker(QThread):
                 # Full LLM grading
                 if len(files['homework']) > 1:
                     total_score = []
+                    total_average = 0
                     for i in range(0, len(files['homework'])):
-                        total_score.append(grade.run_full(files["homework"][i], files["keys"][i]))
+                        output = (grade.run_full(self, files["homework"][i], files["keys"][i]))
+                        parsed = [
+                            item.split(":", 1)[1].strip() if ":" in item else item.strip()
+                            for item in output.split(",")
+                        ]
+                        total_average += parsed[0]
+                        parsed.remove(parsed[0])
+                        total_wrong_answers.extend(parsed)
                         index += 1
                         if int(config.get("General", "Explain Incorrect Answers")) == 2:
                             self.progress.emit(int((index / explained_total) * 100))
                         elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                             self.progress.emit(int((index / graded_total) * 100))
                     # Calculate the correct average for multiple page assignments, where the averages are split per page
-                    total_average = 0
-                    total_wrong_answers = []
-                    for i in range(0, len(total_score)):
-                        total_average += total_score[i][0]
-                        total_wrong_answers.append(total_score[i][1])
-                    score[0] = (total_average / len(files['homework'])) * 100
+                    score = []
+                    score.append((total_average / len(files['homework'])) * 100)
+                    score.append(total_wrong_answers)
                 else:
-                    score = grade.run_full(files["homework"], files["keys"])
+                    output = (grade.run_full(self, files["homework"][0], files["keys"][0]))
+                    parsed = [
+                        item.split(":", 1)[1].strip() if ":" in item else item.strip()
+                        for item in output.split(",")
+                    ]
+                    score = []
+                    score.append(parsed[0])
+                    parsed.remove(parsed[0])
+                    score.append(parsed)
                     index += 1
                     if int(config.get("General", "Explain Incorrect Answers")) == 2:
                         self.progress.emit(int((index / explained_total) * 100))
@@ -269,8 +292,11 @@ class Settings(QDialog):
             config.set("General", "Explain Incorrect Answers", "0")
         if not config.has_option("General", "Model"):
             config.set("General", "Model", "qwen3-vl:8b")
+        if not config.has_option("General", "Full LLM"):
+            config.set("General", "Full LLM", "When Needed")
 
         self.export_type.setCurrentText(config.get("General", "Export Format"))
+        self.full_llm.setCurrentText(config.get("General", "Full LLM"))
         self.server_address.setText(config.get("General", "Ollama Server"))
         self.vision_model.setText(config.get("General", "Model"))
         if int(config.get("General", "Explain Incorrect Answers")) == 2:
@@ -299,6 +325,8 @@ class Settings(QDialog):
         self.server_address.setText("127.0.0.1:11434")
         config.set("General", "Explain Incorrect Answers", "False")
         self.explain_answers.setChecked(False)
+        config.set("General", "Full LLM", "When Needed")
+        self.full_llm.setCurrentText("When Needed")
         config.set("General", "Model", "qwen3-vl:8b")
         self.vision_model.setText("qwen3-vl:8b")
 
@@ -326,7 +354,13 @@ class Settings(QDialog):
         self.vision_model.setPlaceholderText("qwen3-vl:8b")
 
         self.explain_answers = QCheckBox()
+        self.explain_answers.setToolTip("This method is very slow.")
         explain_answers_label = QLabel("Explain Incorrect Answers")
+
+        self.full_llm = QComboBox()
+        self.full_llm.addItems(["Always", "When Needed", "Never"])
+        self.full_llm.setToolTip("Always: Very slow, but more accurate. \n When Needed: Medium speed with good accuracy. \n Never: Faster, but less accurate.")
+        full_llm_label = QLabel("Use full LLM grading")
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
@@ -357,6 +391,11 @@ class Settings(QDialog):
         explain_layout.addWidget(self.explain_answers)
         layout.addLayout(explain_layout)
 
+        full_llm_layout = QHBoxLayout()
+        full_llm_layout.addWidget(full_llm_label)
+        full_llm_layout.addWidget(self.full_llm)
+        layout.addLayout(full_llm_layout)
+
         layout.addWidget(reset_btn)
         layout.addWidget(close_btn)
 
@@ -366,6 +405,7 @@ class Settings(QDialog):
         self.server_address.textEdited.connect(lambda value: self.save_config("General", "Ollama Server", value))
         self.vision_model.textEdited.connect(lambda value: self.save_config("General", "Model", str(value)))
         self.explain_answers.stateChanged.connect(lambda value: self.save_config("General", "Explain Incorrect Answers", str(value)))
+        self.full_llm.currentTextChanged.connect(lambda value: self.save_config("General", "Full LLM", value))
         self.open_config()
 
 # Class used to build GUI
