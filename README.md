@@ -79,6 +79,7 @@ Vision-Enabled LLM Used - [Qwen3-VL:8B](https://ollama.com/library/qwen3-vl)
 - Answers have to be boxed or highlighted for the LLM to find the answer correctly, otherwise it (probably) won't work
 - This program needs ollama to run, you can install it at https://ollama.com
 - May have limitations grading (particularly explaining) longer and more complex single-page assignments due to the simple grading pipeline
+- There need to be the same number of pages in the homework and answer key. There also should be the same number of questions.
 
 ## To Do
 - Suggest new features and report bugs in the issues tab!

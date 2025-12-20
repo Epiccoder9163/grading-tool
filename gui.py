@@ -2,6 +2,7 @@
 
 import sys
 import os
+import time
 from configparser import ConfigParser
 from pathlib import Path
 from typing import List, Dict
@@ -92,6 +93,7 @@ class GradingWorker(QThread):
             question_count = []
             key_answers = []
             student_answers = []
+            review = False
 
             for hw_path in files['homework']:
                 # Inference with the LLM
@@ -99,44 +101,122 @@ class GradingWorker(QThread):
                 # Parse the output
                 while True:
                     try:
-                        parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                        parsed = [
+                            item.split(":", 1)[1].strip() if ":" in item else item.strip()
+                            for item in output.split(",")
+                        ]  
+                        # If the AI requests further review for the assignment being graded, it skips the key OCR and
+                        # goes through full LLM grading, not just OCR.
+                        # Then remove the item from the list, to not collide with further calculations.
+                        if parsed[-1] == "true":
+                            self.result.emit("Further review requested!")
+                            review = True
+                            parsed.remove("true")
+                        elif parsed[-1] == "false":
+                            self.result.emit("Further review not required.")
+                            review = False
+                            parsed.remove("false")
+                        else:
+                            self.result.emit("Unknown response, skipping.")
                         question_count.append(len(parsed))
+
                         break
                     except IndexError:
-                        self.result.emit("Rerunning Prompt!")
+                        # Primitive error message shown if the AI produces a malformed response
+                        self.result.emit("The AI has likely failed to run, giving a malformed output.")
+                        self.result.emit("This can happen due to the homework or key images being corrupted, or the backend program or server crashing.")
+                        self.result.emit("If this happens repeatedly, stop the program and publish an issue on GitHub with the image you used attached, as well as the output in this box.")
+                        time.sleep(15)
+                        self.result.emit("Prompt Rerunning!")
                         output = inference.guirun(hw_path, self)
                 homework_list.extend(parsed)
                 student_answers.append(parsed)
                 # Show the output in the GUI
                 self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
                 index += 1
+                # Update the progress bar
                 if int(config.get("General", "Explain Incorrect Answers")) == 2:
                     self.progress.emit(int((index / explained_total) * 100))
                 elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                     self.progress.emit(int((index / graded_total) * 100))
 
             self.result.emit("\n")
-            for key_path in files['keys']:
-                # Inference with the LLM
-                output = inference.guirun(key_path, self)
-                # Parse the output
-                while True:
-                    try:
-                        parsed = [item.split(":")[1].strip() for item in output.split(",")]
-                        break
-                    except IndexError:
-                        self.result.emit("Rerunning Prompt!")
-                        output = inference.guirun(key_path, self)
-                key_answers.append(parsed)
-                key_list.extend(parsed)
-                # Show the output in the GUI
-                self.result.emit(f"\n{Path(key_path).name}: {parsed}")
-                index += 1
+            if review == False:
+                for key_path in files['keys']:
+                    # Inference with the LLM
+                    output = inference.guirun(key_path, self)
+                    # Parse the output
+                    while True:
+                        try:
+                            parsed = [
+                                item.split(":", 1)[1].strip() if ":" in item else item.strip()
+                                for item in output.split(",")
+                            ]  
+                            # If the AI requests further review for the assignment being graded, it skips the key OCR and
+                            # goes through full LLM grading, not just OCR.
+                            # Then remove the item from the list, to not collide with further calculations.
+                            if parsed[-1] == "true":
+                                parsed.remove("true")
+                            elif parsed[-1] == "false":
+                                parsed.remove("false")
+                            break
+                        except IndexError:
+                            # Primitive error message shown if the AI produces a malformed response
+                            self.result.emit("The AI has likely failed to run, giving a malformed output.")
+                            self.result.emit("This can happen due to the homework or key images being corrupted, or the backend program or server crashing.")
+                            self.result.emit("If this happens repeatedly, stop the program and publish an issue on GitHub with the image you used attached, as well as the output in this box.")
+                            time.sleep(15)
+                            self.result.emit("Prompt Rerunning!")
+                            output = inference.guirun(key_path, self)
+                    key_answers.append(parsed)
+                    key_list.extend(parsed)
+                    # Show the output in the GUI
+                    self.result.emit(f"\n{Path(key_path).name}: {parsed}")
+                    index += 1
+                    # Update the progress bar
+                    if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                        self.progress.emit(int((index / explained_total) * 100))
+                    elif int(config.get("General", "Explain Incorrect Answers")) == 0:
+                        self.progress.emit(int((index / graded_total) * 100))
+            
+            if review == True:
+                graded_total = len(files["homework"])
+                explained_total = graded_total * 2
+                index = 0
                 if int(config.get("General", "Explain Incorrect Answers")) == 2:
                     self.progress.emit(int((index / explained_total) * 100))
                 elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                     self.progress.emit(int((index / graded_total) * 100))
-            score = grade.run(homework_list, key_list)
+
+
+            if review == False:
+                # Primitive comparison grading
+                score = grade.run_basic(homework_list, key_list)
+            elif review == True:
+                # Full LLM grading
+                if len(files['homework']) > 1:
+                    total_score = []
+                    for i in range(0, len(files['homework'])):
+                        total_score.append(grade.run_full(files["homework"][i], files["keys"][i]))
+                        index += 1
+                        if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                            self.progress.emit(int((index / explained_total) * 100))
+                        elif int(config.get("General", "Explain Incorrect Answers")) == 0:
+                            self.progress.emit(int((index / graded_total) * 100))
+                    # Calculate the correct average for multiple page assignments, where the averages are split per page
+                    total_average = 0
+                    total_wrong_answers = []
+                    for i in range(0, len(total_score)):
+                        total_average += total_score[i][0]
+                        total_wrong_answers.append(total_score[i][1])
+                    score[0] = (total_average / len(files['homework'])) * 100
+                else:
+                    score = grade.run_full(files["homework"], files["keys"])
+                    index += 1
+                    if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                        self.progress.emit(int((index / explained_total) * 100))
+                    elif int(config.get("General", "Explain Incorrect Answers")) == 0:
+                        self.progress.emit(int((index / graded_total) * 100))
             graded[name] = score[0]
             grades.append(score[0])
             wrong_answers = score[1]
