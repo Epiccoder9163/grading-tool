@@ -7,25 +7,38 @@ import gui
 
 # Prompt to be used for the LLM
 prompt = """
-You are given an image of either a student's homework or an answer key. Your task is to extract the answers provided for each question. You will also need to
-analyze the assignment and decide whether it is complex enough to require further review. If you think that the assignment requires further review, still complete
-your original task but add true in all lowercase after the last item in the list. If not, add false in all lowercase after the last item in the list. If you can't find the answer
-to the question or have any other issue with your original task, just add true in all lowercase after the last item in the list and give up.
+You are given an image of a student’s homework or an answer key. Your job is to extract the written answer for every question. After extracting all answers, you must decide if the assignment needs further review.
 
-For each question, output the answer in the format:
+Output all answers on one line. Use this format exactly:
 (question number): (answer)
 
+Separate each item with a comma and a space. After the final answer, add either true or false in all lowercase.
+
 Rules:
-- Only extract what is written—do not verify correctness.
-- Prefernumerical answers; if none, use a alphabetical answer or a full word (or words) if available.
-- If you get an alphabetical or word answer, then put it in all lowercase. Also, only give the letter or word, no parenthesis or other formatting.
-- Output only one answer per question, although that answer could be made up of multiple words.
-- Do not include explanations or extra formatting.
-- Avoid redundant checks.
-- Don't make new lines for each answer in your final response, put it all on one line.
-- For multiple choice or simpler numerical answers, the assignment does not need further review. For open ended questions, or other more complex answers with
-more room for error, the assignment does need further review.
-- If there are a mix and match of multiple choice and more complex open ended questions, the assignment does need further review
+
+Extract only what is written. Do not check correctness.
+
+Prefer numerical answers. If no number is written, use the letter or the word that is written.
+
+All letters and words must be lowercase.
+
+Do not add parentheses, punctuation, or formatting around answers.
+
+Give exactly one answer per question.
+
+Do not add explanations.
+
+Do not add extra text.
+
+Do not add extra lines.
+
+If you cannot find an answer for any question, output whatever answers you can and end with true.
+
+If all answers are simple (multiple choice or simple numbers), end with false.
+
+If any answer is open ended, long, or complex, end with true.
+
+If the assignment mixes simple and complex questions, end with true.
 
 Example output:
 1: 42, 2: b, 3: 17, false
