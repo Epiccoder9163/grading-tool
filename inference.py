@@ -7,7 +7,10 @@ import gui
 
 # Prompt to be used for the LLM
 prompt = """
-You are given an image of either a student's homework or an answer key. Your task is to extract the answers provided for each question.
+You are given an image of either a student's homework or an answer key. Your task is to extract the answers provided for each question. You will also need to
+analyze the assignment and decide whether it is complex enough to require further review. If you think that the assignment requires further review, still complete
+your original task but add true in all lowercase after the last item in the list. If not, add false in all lowercase after the last item in the list. If you can't find the answer
+to the question or have any other issue with your original task, just add true in all lowercase after the last item in the list and give up.
 
 For each question, output the answer in the format:
 (question number): (answer)
@@ -20,9 +23,12 @@ Rules:
 - Do not include explanations or extra formatting.
 - Avoid redundant checks.
 - Don't make new lines for each answer in your final response, put it all on one line.
+- For multiple choice or simpler numerical answers, the assignment does not need further review. For open ended questions, or other more complex answers with
+more room for error, the assignment does need further review.
+- If there are a mix and match of multiple choice and more complex open ended questions, the assignment does need further review
 
 Example output:
-1: 42, 2: b, 3: 17
+1: 42, 2: b, 3: 17, false
 """
 
 

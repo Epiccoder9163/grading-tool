@@ -68,6 +68,9 @@ class GradingWorker(QThread):
             self.progress.emit(0)
 
             try:
+                server_address = config.get("General", "Ollama Server")
+                client = ollama.Client(host=server_address)
+                
                 # Pull the model, streaming progress
                 for event in ollama.pull(model, stream=True):
                     if 'completed' in event and 'total' in event:
