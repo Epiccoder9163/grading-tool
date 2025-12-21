@@ -9,5 +9,4 @@ grades.csv
 grades.txt
 /venv
 config.ini
-config.ini
-*.ini
+
