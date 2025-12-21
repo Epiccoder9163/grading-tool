@@ -122,7 +122,8 @@ class GradingWorker(QThread):
                         elif parsed[-1] == "false" or config.get("General", "Full LLM") == "Never":
                             self.result.emit("Further review not required.")
                             review = False
-                            parsed.remove("false")
+                            if parsed[-1] == "false":
+                                parsed.remove("false")
                         else:
                             self.result.emit("Unknown response, skipping.")
                         question_count.append(len(parsed))
