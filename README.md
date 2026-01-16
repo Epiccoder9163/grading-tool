@@ -7,6 +7,8 @@ A LLM-based grading tool to help teachers grade assignments
 
 Vision-Enabled LLM Used - [Qwen3-VL:8B](https://ollama.com/library/qwen3-vl)
 
+[Ministral-3:14b](https://ollama.com/library/ministral-3) and 8b versions in testing
+
 ## System Requirements
 A desktop or laptop computer with a dedicated graphics card with 12 or more gigabytes of VRAM is recommended.
 
