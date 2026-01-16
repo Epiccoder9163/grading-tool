@@ -99,7 +99,7 @@ class GradingWorker(QThread):
 
                 for hw_path in files['homework']:
                     # Inference with the LLM
-                    output = inference.guirun(hw_path, self)
+                    output = inference.legacyrun(hw_path, self)
                     # Parse the output
                     while True:
                         try:
@@ -108,7 +108,7 @@ class GradingWorker(QThread):
                             break
                         except IndexError:
                             self.result.emit("Rerunning Prompt!")
-                            output = inference.guirun(hw_path, self)
+                            output = inference.legacyrun(hw_path, self)
                     homework_list.extend(parsed)
                     student_answers.append(parsed)
                     # Show the output in the GUI
@@ -122,7 +122,7 @@ class GradingWorker(QThread):
                 self.result.emit("\n")
                 for key_path in files['keys']:
                     # Inference with the LLM
-                    output = inference.guirun(key_path, self)
+                    output = inference.legacyrun(key_path, self)
                     # Parse the output
                     while True:
                         try:
@@ -130,7 +130,7 @@ class GradingWorker(QThread):
                             break
                         except IndexError:
                             self.result.emit("Rerunning Prompt!")
-                            output = inference.guirun(key_path, self)
+                            output = inference.legacyrun(key_path, self)
                     key_answers.append(parsed)
                     key_list.extend(parsed)
                     # Show the output in the GUI
@@ -140,7 +140,7 @@ class GradingWorker(QThread):
                         self.progress.emit(int((index / explained_total) * 100))
                     elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                         self.progress.emit(int((index / graded_total) * 100))
-                score = grade.run(homework_list, key_list)
+                score = grade.legacyrun(homework_list, key_list)
                 graded[name] = score[0]
                 grades.append(score[0])
                 wrong_answers = score[1]
@@ -150,7 +150,7 @@ class GradingWorker(QThread):
                 # Check if the student didn't get a 100, if so there are no incorrect answers to explain
                 if score[0] != 100:
                     if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                        explanations_output = (explain.run(self, files["homework"], files["keys"], explained_total, index))
+                        explanations_output = (explain.legacyrun(self, files["homework"], files["keys"], explained_total, index))
                         explanations = explanations_output[0]
                         index = explanations_output[1]
                 else:
@@ -166,6 +166,7 @@ class GradingWorker(QThread):
             self.export_btn_signal.emit(True)
             self.gui_state.emit(True)
         else:
+            # Full LLM Grading (Beta)
             exit()
 
 # Class used to build settings menu
@@ -266,7 +267,7 @@ class Settings(QDialog):
         full_llm_label = QLabel("Use Full LLM grading (BETA)")
 
         # --- Buttons ---
-        version_btn = QPushButton("Verson")
+        version_btn = QPushButton("Version")
         version_btn.clicked.connect(self.show_version)
 
         close_btn = QPushButton("Close")
@@ -321,7 +322,7 @@ class Settings(QDialog):
 
     def show_version(self):
         msg = QMessageBox()
-        msg.setWindowTitle("Verson")
+        msg.setWindowTitle("Version")
         msg.setText("""<b>LLM Grading Tool</b>
          <br>Latest Development Build
          <br><br><i>Elliott Wise 2026</i>""")

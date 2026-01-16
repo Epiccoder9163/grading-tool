@@ -6,7 +6,7 @@ from PyQt6.QtGui import QTextCursor
 import gui
 
 # Prompt to be used for the LLM
-prompt = """
+prompt_legacy = """
 You are given an image of either a student's homework or an answer key. Your task is to extract the answers provided for each question.
 
 For each question, output the answer in the format:
@@ -25,10 +25,24 @@ Example output:
 1: 42, 2: b, 3: 17
 """
 
+def promptgen(hw, keys):
+    # Generate the prompt dynamically to distinguish images to the model
+
+    print("hello")
+
+def run(path, self):
+    # Initialize ollama client from configuration
+    config = ConfigParser()
+    config.read("config.ini")
+    model = config.get("General", "Model")
+    server_address = config.get("General", "Ollama Server")
+
+    client = ollama.Client(host=server_address)
 
 
 
-def guirun(path, self):
+
+def legacyrun(path, self):
     # Initialize ollama client from configuration
     config = ConfigParser()
     config.read("config.ini")
@@ -55,7 +69,7 @@ def guirun(path, self):
                     },
                     {
                         "role": "user",
-                        "content": prompt,
+                        "content": prompt_legacy,
                         "images": [path],
                     }
                 ],

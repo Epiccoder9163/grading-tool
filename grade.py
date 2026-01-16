@@ -8,7 +8,7 @@ def avg(numquestions, numright):
     output = round(avg * 100)
     return output
 
-def run(homework_list, key_list):
+def legacyrun(homework_list, key_list):
     wrong_answers = []
     numright = 0
     for i in range(0, len(homework_list)):

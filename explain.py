@@ -26,7 +26,7 @@ Guidelines:
  - Some answers should be correct. If there are some, you don't have to note it, just pass by them. Only comment on incorrect answers.
 """
 
-def run(self, hw_paths, key_paths, progress_total, progress_index):
+def legacyrun(self, hw_paths, key_paths, progress_total, progress_index):
     # Initialize ollama client from configuration
     config = ConfigParser()
     config.read("config.ini")
