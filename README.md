@@ -59,11 +59,6 @@ This program has only been tested on Zorin OS 18 (Ubuntu 24.04 LTS) as well as F
    python3 ./gui.py
    ```
 
-   **Or run the TTY version (Depreciated)**
-   ```bash
-   python3 ./Legacy/main.py
-   ```
-
 ## Usage
 
 1. Run gui.py

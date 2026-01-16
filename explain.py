@@ -1,5 +1,4 @@
 # Answer Explaination Script
-# !!! This script is only used in gui.py, not main.py
 
 import ollama
 import gui
