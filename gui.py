@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List, Dict
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QFileDialog,
-    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox, QDialog, QCheckBox
+    QVBoxLayout, QHBoxLayout, QProgressBar, QTextEdit, QLineEdit, QComboBox, QDialog, QCheckBox, QMessageBox
 )
 from PyQt6.QtGui import QTextCursor
 from PyQt6.QtCore import QThread, pyqtSignal
@@ -68,9 +68,6 @@ class GradingWorker(QThread):
             self.progress.emit(0)
 
             try:
-                server_address = config.get("General", "Ollama Server")
-                client = ollama.Client(host=server_address)
-                
                 # Pull the model, streaming progress
                 for event in ollama.pull(model, stream=True):
                     if 'completed' in event and 'total' in event:
@@ -84,190 +81,92 @@ class GradingWorker(QThread):
             except Exception as exc:
                 self.result.emit(f"\nError during download: {exc}")
 
-        self.progress.emit(0)
-        graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
-        explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
-        index = 0
-            
-        for name, files in self.paths.items():
-            homework_list = []
-            key_list = []
-            wrong_answers = []
-            question_count = []
-            key_answers = []
-            student_answers = []
-            review = False
+        # Run Legacy Grading if configured in config file
+        if config.get("General", "Full LLM") == "Legacy":
 
-            for hw_path in files['homework']:
-                # Inference with the LLM
-                output = inference.guirun(hw_path, self)
-                # Parse the output
-                while True:
-                    try:
-                        parsed = [
-                            item.split(":", 1)[1].strip() if ":" in item else item.strip()
-                            for item in output.split(",")
-                        ]  
-                        # If the AI requests further review for the assignment being graded, it skips the key OCR and
-                        # goes through full LLM grading, not just OCR.
-                        # Then remove the item from the list, to not collide with further calculations.
-                        if config.get("General", "Full LLM") == "Always":
-                            self.result.emit("Further review required!")
-                            review = True
-                            if parsed[-1] == "true":
-                                parsed.remove("true")
-                            elif parsed[-1] == "false":
-                                parsed.remove("false")
-                        elif parsed[-1] == "true" and config.get("General", "Full LLM") == "When Needed":
-                            self.result.emit("Further review requested!")
-                            review = True
-                            parsed.remove("true")
-                        elif parsed[-1] == "false" or config.get("General", "Full LLM") == "Never":
-                            self.result.emit("Further review not required.")
-                            review = False
-                            if parsed[-1] == "false":
-                                parsed.remove("false")
-                        else:
-                            self.result.emit("Unknown response, skipping.")
-                        question_count.append(len(parsed))
+            self.progress.emit(0)
+            graded_total = sum(len(v['homework']) + len(v['keys']) for v in self.paths.values())
+            explained_total = sum(len(v['homework']) for v in self.paths.values()) + graded_total
+            index = 0
+        
+            for name, files in self.paths.items():
+                homework_list = []
+                key_list = []
+                wrong_answers = []
+                question_count = []
+                key_answers = []
+                student_answers = []
 
-                        break
-                    except IndexError:
-                        # Primitive error message shown if the AI produces a malformed response
-                        self.result.emit("The AI has likely failed to run, giving a malformed output.")
-                        self.result.emit("This can happen due to the homework or key images being corrupted, or the backend program or server crashing.")
-                        self.result.emit("If this happens repeatedly, stop the program and publish an issue on GitHub with the image you used attached, as well as the output in this box.")
-                        time.sleep(15)
-                        self.result.emit("Prompt Rerunning!")
-                        output = inference.guirun(hw_path, self)
-                homework_list.extend(parsed)
-                student_answers.append(parsed)
-                # Show the output in the GUI
-                self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
-                index += 1
-                # Update the progress bar
-                if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                    self.progress.emit(int((index / explained_total) * 100))
-                elif int(config.get("General", "Explain Incorrect Answers")) == 0:
-                    self.progress.emit(int((index / graded_total) * 100))
-                # If review is true, skip ocr for the other hw pages
-                if review == True:
-                    break
+                for hw_path in files['homework']:
+                    # Inference with the LLM
+                    output = inference.guirun(hw_path, self)
+                    # Parse the output
+                    while True:
+                        try:
+                            parsed = [item.split(":")[1].strip() for item in output.split(",")]
+                            question_count.append(len(parsed))
+                            break
+                        except IndexError:
+                            self.result.emit("Rerunning Prompt!")
+                            output = inference.guirun(hw_path, self)
+                    homework_list.extend(parsed)
+                    student_answers.append(parsed)
+                    # Show the output in the GUI
+                    self.result.emit(f"\n{Path(hw_path).name}: {parsed}")
+                    index += 1
+                    if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                        self.progress.emit(int((index / explained_total) * 100))
+                    elif int(config.get("General", "Explain Incorrect Answers")) == 0:
+                        self.progress.emit(int((index / graded_total) * 100))
 
-            self.result.emit("\n")
-            if review == False:
+                self.result.emit("\n")
                 for key_path in files['keys']:
                     # Inference with the LLM
                     output = inference.guirun(key_path, self)
                     # Parse the output
                     while True:
                         try:
-                            parsed = [
-                                item.split(":", 1)[1].strip() if ":" in item else item.strip()
-                                for item in output.split(",")
-                            ]  
-                            # If the AI requests further review for the assignment being graded, it skips the key OCR and
-                            # goes through full LLM grading, not just OCR.
-                            # Then remove the item from the list, to not collide with further calculations.
-                            if parsed[-1] == "true":
-                                parsed.remove("true")
-                            elif parsed[-1] == "false":
-                                parsed.remove("false")
+                            parsed = [item.split(":")[1].strip() for item in output.split(",")]
                             break
                         except IndexError:
-                            # Primitive error message shown if the AI produces a malformed response
-                            self.result.emit("The AI has likely failed to run, giving a malformed output.")
-                            self.result.emit("This can happen due to the homework or key images being corrupted, or the backend program or server crashing.")
-                            self.result.emit("If this happens repeatedly, stop the program and publish an issue on GitHub with the image you used attached, as well as the output in this box.")
-                            time.sleep(15)
-                            self.result.emit("Prompt Rerunning!")
+                            self.result.emit("Rerunning Prompt!")
                             output = inference.guirun(key_path, self)
                     key_answers.append(parsed)
                     key_list.extend(parsed)
                     # Show the output in the GUI
                     self.result.emit(f"\n{Path(key_path).name}: {parsed}")
                     index += 1
-                    # Update the progress bar
                     if int(config.get("General", "Explain Incorrect Answers")) == 2:
                         self.progress.emit(int((index / explained_total) * 100))
                     elif int(config.get("General", "Explain Incorrect Answers")) == 0:
                         self.progress.emit(int((index / graded_total) * 100))
-            
-            if review == True:
-                graded_total = len(files["homework"])
-                explained_total = graded_total * 2
-                index = 0
-                if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                    self.progress.emit(int((index / explained_total) * 100))
-                elif int(config.get("General", "Explain Incorrect Answers")) == 0:
-                    self.progress.emit(int((index / graded_total) * 100))
+                score = grade.run(homework_list, key_list)
+                graded[name] = score[0]
+                grades.append(score[0])
+                wrong_answers = score[1]
+                wrong_answers_final.append(wrong_answers)
+                # Run the explain run function to explain incorrect answers if enabled in the config file
 
-
-            if review == False:
-                # Primitive comparison grading
-                score = grade.run_basic(homework_list, key_list)
-            elif review == True:
-                # Full LLM grading
-                if len(files['homework']) > 1:
-                    total_score = []
-                    total_average = 0
-                    for i in range(0, len(files['homework'])):
-                        output = (grade.run_full(self, files["homework"][i], files["keys"][i]))
-                        parsed = [
-                            item.split(":", 1)[1].strip() if ":" in item else item.strip()
-                            for item in output.split(",")
-                        ]
-                        total_average += parsed[0]
-                        parsed.remove(parsed[0])
-                        total_wrong_answers.extend(parsed)
-                        index += 1
-                        if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                            self.progress.emit(int((index / explained_total) * 100))
-                        elif int(config.get("General", "Explain Incorrect Answers")) == 0:
-                            self.progress.emit(int((index / graded_total) * 100))
-                    # Calculate the correct average for multiple page assignments, where the averages are split per page
-                    score = []
-                    score.append((total_average / len(files['homework'])) * 100)
-                    score.append(total_wrong_answers)
+                # Check if the student didn't get a 100, if so there are no incorrect answers to explain
+                if score[0] != 100:
+                    if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                        explanations_output = (explain.run(self, files["homework"], files["keys"], explained_total, index))
+                        explanations = explanations_output[0]
+                        index = explanations_output[1]
                 else:
-                    output = (grade.run_full(self, files["homework"][0], files["keys"][0]))
-                    parsed = [
-                        item.split(":", 1)[1].strip() if ":" in item else item.strip()
-                        for item in output.split(",")
-                    ]
-                    score = []
-                    score.append(parsed[0])
-                    parsed.remove(parsed[0])
-                    score.append(parsed)
-                    index += 1
-                    if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                        self.progress.emit(int((index / explained_total) * 100))
-                    elif int(config.get("General", "Explain Incorrect Answers")) == 0:
-                        self.progress.emit(int((index / graded_total) * 100))
-            graded[name] = score[0]
-            grades.append(score[0])
-            wrong_answers = score[1]
-            wrong_answers_final.append(wrong_answers)
-            # Run the explain run function to explain incorrect answers if enabled in the config file
-
-            # Check if the student didn't get a 100, if so there are no incorrect answers to explain
-            if score[0] != 100:
+                    self.result.emit("Student got a 100, so no incorrect answers to explain. \n Skipping task")
+            self.finished.emit("All assignments graded.")
+            # Add all grades in output box when finished
+            for i in range(0, len(grades)):
+                self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
+                self.result.emit(f"\nWrong Answers: {wrong_answers_final[i]}")
                 if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                    explanations_output = (explain.run(self, files["homework"], files["keys"], explained_total, index))
-                    explanations = explanations_output[0]
-                    index = explanations_output[1]
-            else:
-                self.result.emit("Student got a 100, so no incorrect answers to explain. \n Skipping task")
-        self.finished.emit("All assignments graded.")
-        # Add all grades in output box when finished
-        for i in range(0, len(grades)):
-            self.result.emit(f"\n{names_list[i]} → Grade: {grades[i]}%")
-            self.result.emit(f"\nWrong Answers: {wrong_answers_final[i]}")
-            if int(config.get("General", "Explain Incorrect Answers")) == 2:
-                self.result.emit(f"\nExplanations: {explanations[i]}")
-        # Enable and disable text boxes when the assignments are done grading
-        self.export_btn_signal.emit(True)
-        self.gui_state.emit(True)
+                    self.result.emit(f"\nExplanations: {explanations[i]}")
+            # Enable and disable text boxes when the assignments are done grading
+            self.export_btn_signal.emit(True)
+            self.gui_state.emit(True)
+        else:
+            exit()
 
 # Class used to build settings menu
 # Stores, saves, and loads settings file from 'config.ini'
@@ -297,7 +196,7 @@ class Settings(QDialog):
         if not config.has_option("General", "Model"):
             config.set("General", "Model", "qwen3-vl:8b")
         if not config.has_option("General", "Full LLM"):
-            config.set("General", "Full LLM", "When Needed")
+            config.set("General", "Full LLM", "Legacy")
 
         self.export_type.setCurrentText(config.get("General", "Export Format"))
         self.full_llm.setCurrentText(config.get("General", "Full LLM"))
@@ -329,8 +228,8 @@ class Settings(QDialog):
         self.server_address.setText("127.0.0.1:11434")
         config.set("General", "Explain Incorrect Answers", "False")
         self.explain_answers.setChecked(False)
-        config.set("General", "Full LLM", "When Needed")
-        self.full_llm.setCurrentText("When Needed")
+        config.set("General", "Full LLM", "Legacy")
+        self.full_llm.setCurrentText("Legacy")
         config.set("General", "Model", "qwen3-vl:8b")
         self.vision_model.setText("qwen3-vl:8b")
 
@@ -358,13 +257,17 @@ class Settings(QDialog):
         self.vision_model.setPlaceholderText("qwen3-vl:8b")
 
         self.explain_answers = QCheckBox()
-        self.explain_answers.setToolTip("This method is very slow.")
+        self.explain_answers.setToolTip("Provides answer explanations at the cost of speed.")
         explain_answers_label = QLabel("Explain Incorrect Answers")
 
         self.full_llm = QComboBox()
-        self.full_llm.addItems(["Always", "When Needed", "Never"])
-        self.full_llm.setToolTip("Always: Very slow, but more accurate. \n When Needed: Medium speed with good accuracy. \n Never: Faster, but less accurate.")
-        full_llm_label = QLabel("Use full LLM grading")
+        self.full_llm.addItems(["Full LLM Grading", "Legacy"])
+        self.full_llm.setToolTip("Full LLM Grading: Use LLM to grade fully \n Legacy: Use LLM for OCR only")
+        full_llm_label = QLabel("Use Full LLM grading (BETA)")
+
+        # --- Buttons ---
+        version_btn = QPushButton("Verson")
+        version_btn.clicked.connect(self.show_version)
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.close)
@@ -372,6 +275,7 @@ class Settings(QDialog):
         reset_btn = QPushButton("Reset Settings")
         reset_btn.clicked.connect(self.reset_config)
 
+        # --- Layouts ---
         export_layout = QHBoxLayout()
         export_layout.addWidget(export_label)
         export_layout.addWidget(self.export_type)
@@ -401,16 +305,27 @@ class Settings(QDialog):
         layout.addLayout(full_llm_layout)
 
         layout.addWidget(reset_btn)
+        layout.addWidget(version_btn)
         layout.addWidget(close_btn)
 
         self.setLayout(layout)
-        
+
+        # Config bindings
         self.export_type.currentTextChanged.connect(lambda value: self.save_config("General", "Export Format", value))
         self.server_address.textEdited.connect(lambda value: self.save_config("General", "Ollama Server", value))
         self.vision_model.textEdited.connect(lambda value: self.save_config("General", "Model", str(value)))
         self.explain_answers.stateChanged.connect(lambda value: self.save_config("General", "Explain Incorrect Answers", str(value)))
         self.full_llm.currentTextChanged.connect(lambda value: self.save_config("General", "Full LLM", value))
+
         self.open_config()
+
+    def show_version(self):
+        msg = QMessageBox()
+        msg.setWindowTitle("Verson")
+        msg.setText("""<b>LLM Grading Tool</b>
+         <br>Latest Development Build
+         <br><br><i>Elliott Wise 2026</i>""")
+        msg.exec()
 
 # Class used to build GUI
 # Has events for button presses, etc
