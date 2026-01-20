@@ -167,7 +167,53 @@ class GradingWorker(QThread):
             self.gui_state.emit(True)
         else:
             # Full LLM Grading (Beta)
-            exit()
+
+            # Reset progress bar
+            self.progress.emit(0)
+
+            # Generate progress bar total
+            if config.get("General", "explain incorrect answers") == 2:
+                progress_total = len(self.paths.values()) * 2
+            else:
+                progress_total = len(self.paths.values())
+            
+            # Set temp variables
+            progress_index = 0
+            grades = []
+            explanations = []
+            names_list = []
+
+            # Loop as many times as there are separate assignments to grade, all pages in an assignment are graded at the same time
+            for name, files in self.paths.items():
+                # Append current assignment name to list
+                names_list.append(name)
+                # Run grading function and append result to list
+                grades.append(int(inference.run(files['homework'], files['keys'], self)))
+                # If the student didn't get a 100 for their grade as well as having the option turned on, run answer explanation function and append result to list
+                if grades[progress_index] != 100:
+                    if config.get("General", "explain incorrect answers") == 2:
+                        explanations.append(explain.run(files['homework'], files['keys'], grades(progress_index), self))
+                
+                # Update progress index
+                progress_index += 1
+                
+                # Emit progress status
+                if int(config.get("General", "Explain Incorrect Answers")) == 2:
+                    self.progress.emit(int((progress_index / progress_total) * 100))
+                elif int(config.get("General", "Explain Incorrect Answers")) == 0:
+                    self.progress.emit(int((progress_index / progress_total) * 100))
+            
+            # Emit final results for all assignments
+            for i in range(progress_index)():
+                self.result.emit(names_list[i])
+                self.result.emit(grades[i])
+                self.result.emit(explanations[i])
+
+            # Re-enable GUI
+            self.finished.emit("All assignments graded.")
+            self.export_btn_signal.emit(True)
+            self.gui_state.emit(True)
+
 
 # Class used to build settings menu
 # Stores, saves, and loads settings file from 'config.ini'
