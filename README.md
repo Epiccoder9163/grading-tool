@@ -85,7 +85,8 @@ This program has only been tested on Zorin OS 18 (Ubuntu 24.04 LTS) as well as F
 
 ## To Do
 - Suggest new features and report bugs in the issues tab!
- 
+- [Roadmap](./roadmap.md)
+
 ## Credits
 
 - Ollama
