@@ -2,7 +2,9 @@
 
 ## Current state of project
 Development has slowed
+
 Project is not fully functional yet
+
 Some basic features
 
 ## Priorities
